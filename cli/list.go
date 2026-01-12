@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
@@ -16,6 +15,7 @@ type listOptions struct {
 	output string
 	task   string
 	branch string
+	abs    bool
 }
 
 type listRow struct {
@@ -56,7 +56,7 @@ func newListCommand(state *runState) *cobra.Command {
 				row := listRow{
 					Task:    task,
 					Branch:  branch,
-					Path:    filepath.Clean(wt.Path),
+					Path:    displayPath(repoRoot, wt.Path, opts.abs),
 					Present: true,
 					Head:    worktree.ShortHash(wt.Head),
 				}
@@ -76,6 +76,8 @@ func newListCommand(state *runState) *cobra.Command {
 	cmd.Flags().StringVar(&opts.output, "output", opts.output, "output format: table or json")
 	cmd.Flags().StringVar(&opts.task, "task", "", "filter by task name")
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
+	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
+	cmd.Flags().BoolVar(&opts.abs, "abs", false, "alias for --absolute-path")
 
 	return cmd
 }

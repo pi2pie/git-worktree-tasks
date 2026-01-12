@@ -1,7 +1,7 @@
 ---
 title: "Worktree Operations Matrix"
 date: 2026-01-12
-status: in-progress
+status: completed
 agent: codex
 ---
 

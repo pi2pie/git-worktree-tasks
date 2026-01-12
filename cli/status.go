@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
@@ -18,6 +17,7 @@ type statusOptions struct {
 	target string
 	task   string
 	branch string
+	abs    bool
 }
 
 type statusRow struct {
@@ -82,7 +82,7 @@ func newStatusCommand(state *runState) *cobra.Command {
 				rows = append(rows, statusRow{
 					Task:       task,
 					Branch:     branch,
-					Path:       filepath.Clean(wt.Path),
+					Path:       displayPath(repoRoot, wt.Path, opts.abs),
 					Base:       statusInfo.Base,
 					Target:     target,
 					LastCommit: statusInfo.LastCommit,
@@ -100,6 +100,8 @@ func newStatusCommand(state *runState) *cobra.Command {
 	cmd.Flags().StringVar(&opts.target, "target", "", "target branch for ahead/behind comparison")
 	cmd.Flags().StringVar(&opts.task, "task", "", "filter by task name")
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
+	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
+	cmd.Flags().BoolVar(&opts.abs, "abs", false, "alias for --absolute-path")
 
 	return cmd
 }

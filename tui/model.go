@@ -30,7 +30,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) View() string {
-	title := ui.TitleStyle.Render("git-worktree-task")
+	title := ui.TitleStyle.Render("git-worktree-tasks")
 	body := ui.MutedStyle.Render("TUI scaffold: create, finish, cleanup, list, status")
 	return ui.BorderStyle.Render(title + "\n" + body + "\n\nPress q to quit.")
 }
