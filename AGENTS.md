@@ -27,6 +27,10 @@ Use the following skill for this repository:
 
 All meaningful agent work SHOULD be documented.
 
+### Timezone
+
+- Unless a document or request specifies otherwise, record dates in UTC.
+
 ### Plan Documents
 
 Location:

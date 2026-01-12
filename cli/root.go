@@ -45,6 +45,7 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
+	cmd.CompletionOptions.DisableDefaultCmd = true
 
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
