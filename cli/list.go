@@ -18,6 +18,7 @@ type listOptions struct {
 	task   string
 	branch string
 	abs    bool
+	grid   bool
 }
 
 type listRow struct {
@@ -71,7 +72,7 @@ func newListCommand(state *runState) *cobra.Command {
 				rows = append(rows, row)
 			}
 
-			return renderList(cmd, opts.output, rows)
+			return renderList(cmd, opts.output, rows, opts.grid)
 		},
 	}
 
@@ -80,24 +81,25 @@ func newListCommand(state *runState) *cobra.Command {
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
 	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
 	cmd.Flags().BoolVar(&opts.abs, "abs", false, "alias for --absolute-path")
+	cmd.Flags().BoolVar(&opts.grid, "grid", false, "render table with grid borders")
 
 	return cmd
 }
 
-func renderList(cmd *cobra.Command, format string, rows []listRow) error {
+func renderList(cmd *cobra.Command, format string, rows []listRow, grid bool) error {
 	switch format {
 	case "table":
 		columns := []tableColumn{
-			{Header: "TASK"},
-			{Header: "BRANCH", Style: func(value string) lipgloss.Style { return ui.AccentStyle }},
-			{Header: "PATH"},
-			{Header: "PRESENT", Style: func(value string) lipgloss.Style {
+			{Header: "TASK", MinWidth: 6},
+			{Header: "BRANCH", MinWidth: 10, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.AccentStyle }},
+			{Header: "PATH", MinWidth: 16, Flexible: true, Truncate: true},
+			{Header: "PRESENT", MinWidth: 7, Style: func(value string) lipgloss.Style {
 				if value == "true" {
 					return ui.SuccessStyle
 				}
 				return ui.ErrorStyle
 			}},
-			{Header: "HEAD", Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
+			{Header: "HEAD", MinWidth: 7, Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
 		}
 		tableRows := make([][]string, 0, len(rows))
 		for _, row := range rows {
@@ -109,7 +111,7 @@ func renderList(cmd *cobra.Command, format string, rows []listRow) error {
 				row.Head,
 			})
 		}
-		renderTable(cmd, columns, tableRows)
+		renderTable(cmd, columns, tableRows, grid)
 		return nil
 	case "json":
 		payload, err := json.MarshalIndent(rows, "", "  ")

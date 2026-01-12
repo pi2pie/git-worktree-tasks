@@ -20,6 +20,7 @@ type statusOptions struct {
 	task   string
 	branch string
 	abs    bool
+	grid   bool
 }
 
 type statusRow struct {
@@ -94,7 +95,7 @@ func newStatusCommand(state *runState) *cobra.Command {
 				})
 			}
 
-			return renderStatus(cmd, opts.output, rows)
+			return renderStatus(cmd, opts.output, rows, opts.grid)
 		},
 	}
 
@@ -104,33 +105,34 @@ func newStatusCommand(state *runState) *cobra.Command {
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
 	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
 	cmd.Flags().BoolVar(&opts.abs, "abs", false, "alias for --absolute-path")
+	cmd.Flags().BoolVar(&opts.grid, "grid", false, "render table with grid borders")
 
 	return cmd
 }
 
-func renderStatus(cmd *cobra.Command, format string, rows []statusRow) error {
+func renderStatus(cmd *cobra.Command, format string, rows []statusRow, grid bool) error {
 	switch format {
 	case "table":
 		columns := []tableColumn{
-			{Header: "TASK"},
-			{Header: "BRANCH", Style: func(value string) lipgloss.Style { return ui.AccentStyle }},
-			{Header: "PATH"},
-			{Header: "BASE", Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
-			{Header: "TARGET", Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
-			{Header: "LAST_COMMIT", Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
-			{Header: "DIRTY", Style: func(value string) lipgloss.Style {
+			{Header: "TASK", MinWidth: 6},
+			{Header: "BRANCH", MinWidth: 10, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.AccentStyle }},
+			{Header: "PATH", MinWidth: 16, Flexible: true, Truncate: true},
+			{Header: "BASE", MinWidth: 8, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
+			{Header: "TARGET", MinWidth: 8, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
+			{Header: "LAST_COMMIT", MinWidth: 12, MaxWidth: 24, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
+			{Header: "DIRTY", MinWidth: 5, Style: func(value string) lipgloss.Style {
 				if value == "true" {
 					return ui.WarningStyle
 				}
 				return ui.SuccessStyle
 			}},
-			{Header: "AHEAD", Style: func(value string) lipgloss.Style {
+			{Header: "AHEAD", MinWidth: 5, Style: func(value string) lipgloss.Style {
 				if value != "0" {
 					return ui.WarningStyle
 				}
 				return ui.MutedStyle
 			}},
-			{Header: "BEHIND", Style: func(value string) lipgloss.Style {
+			{Header: "BEHIND", MinWidth: 6, Style: func(value string) lipgloss.Style {
 				if value != "0" {
 					return ui.ErrorStyle
 				}
@@ -151,7 +153,7 @@ func renderStatus(cmd *cobra.Command, format string, rows []statusRow) error {
 				strconv.Itoa(row.Behind),
 			})
 		}
-		renderTable(cmd, columns, tableRows)
+		renderTable(cmd, columns, tableRows, grid)
 		return nil
 	case "json":
 		payload, err := json.MarshalIndent(rows, "", "  ")

@@ -4,18 +4,25 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.0.4"
+var Version = "0.0.5"
 
-var errCanceled = errors.New("git worktree task process canceled")
+var (
+	errCanceled     = errors.New("git worktree task process canceled")
+	errThemesListed = errors.New("themes listed")
+)
 
 func Execute() int {
 	cmd, state := gitWorkTreeCommand()
 	if err := cmd.Execute(); err != nil {
+		if errors.Is(err, errThemesListed) {
+			return 0
+		}
 		if errors.Is(err, errCanceled) {
 			fmt.Fprintln(cmd.ErrOrStderr(), ui.WarningStyle.Render("git worktree task process canceled"))
 			return 3
@@ -33,6 +40,8 @@ type runState struct {
 	hasWarnings   bool
 	exitOnWarning bool
 	noColor       bool
+	theme         string
+	listThemes    bool
 }
 
 func gitWorkTreeCommand() (*cobra.Command, *runState) {
@@ -50,7 +59,16 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
 	cmd.PersistentFlags().BoolVar(&state.noColor, "nocolor", false, "disable color output")
+	cmd.PersistentFlags().StringVar(&state.theme, "theme", ui.DefaultThemeName(), "color theme: "+strings.Join(ui.ThemeNames(), ", "))
+	cmd.PersistentFlags().BoolVar(&state.listThemes, "themes", false, "print available themes and exit")
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if state.listThemes {
+			fmt.Fprintln(cmd.OutOrStdout(), strings.Join(ui.ThemeNames(), "\n"))
+			return errThemesListed
+		}
+		if err := ui.SetTheme(state.theme); err != nil {
+			return err
+		}
 		ui.SetColorEnabled(!state.noColor)
 		return nil
 	}
