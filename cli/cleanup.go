@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dev-pi2pie/git-worktree-tasks/internal/git"
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
 	"github.com/spf13/cobra"
 )
@@ -12,12 +13,13 @@ type cleanupOptions struct {
 	removeWorktree bool
 	removeBranch   bool
 	forceBranch    bool
+	worktreeOnly   bool
 	yes            bool
 	dryRun         bool
 }
 
 func newCleanupCommand(state *runState) *cobra.Command {
-	opts := &cleanupOptions{removeWorktree: true}
+	opts := &cleanupOptions{removeWorktree: true, removeBranch: true}
 	cmd := &cobra.Command{
 		Use:     "cleanup <task>",
 		Short:   "Remove a task worktree and/or branch",
@@ -35,21 +37,50 @@ func newCleanupCommand(state *runState) *cobra.Command {
 			path := worktree.WorktreePath(repoRoot, repo, task)
 			branch := task
 
+			if opts.worktreeOnly {
+				opts.removeWorktree = true
+				opts.removeBranch = false
+			}
+
 			if !opts.removeWorktree && !opts.removeBranch {
 				return fmt.Errorf("nothing to clean: enable --remove-worktree and/or --remove-branch")
 			}
 
-			if !opts.yes {
-				ok, err := confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), "Remove worktree/branch?")
+			worktreeExists, err := worktree.Exists(ctx, runner, repoRoot, path)
+			if err != nil {
+				return err
+			}
+
+			branchExists := false
+			if opts.removeBranch {
+				branchExists, err = git.BranchExists(ctx, runner, repoRoot, branch)
 				if err != nil {
 					return err
 				}
-				if !ok {
-					return errCanceled
+			}
+
+			if opts.removeWorktree && !worktreeExists {
+				if opts.removeBranch {
+					if branchExists {
+						fmt.Fprintf(cmd.OutOrStdout(), "no worktree found for task %q; branch %q exists\n", task, branch)
+					} else {
+						fmt.Fprintf(cmd.OutOrStdout(), "no worktree found for task %q; no branch %q\n", task, branch)
+					}
+				} else {
+					fmt.Fprintf(cmd.OutOrStdout(), "no worktree found for task %q\n", task)
 				}
 			}
 
-			if opts.removeWorktree {
+			if opts.removeWorktree && worktreeExists {
+				if !opts.yes {
+					ok, err := confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), "Remove worktree?")
+					if err != nil {
+						return err
+					}
+					if !ok {
+						return errCanceled
+					}
+				}
 				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", path); err != nil {
 					return err
 				}
@@ -59,12 +90,31 @@ func newCleanupCommand(state *runState) *cobra.Command {
 			}
 
 			if opts.removeBranch {
-				deleteFlag := "-d"
-				if opts.forceBranch {
-					deleteFlag = "-D"
-				}
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "branch", deleteFlag, branch); err != nil {
-					return err
+				if !branchExists {
+					if !(opts.removeWorktree && !worktreeExists) {
+						fmt.Fprintf(cmd.OutOrStdout(), "no branch %q to remove\n", branch)
+					}
+				} else {
+					if !opts.yes {
+						message := fmt.Sprintf("Remove branch %q?", branch)
+						if !worktreeExists && opts.removeWorktree {
+							message = fmt.Sprintf("No worktree found for task %q. Remove branch %q anyway?", task, branch)
+						}
+						ok, err := confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), message)
+						if err != nil {
+							return err
+						}
+						if !ok {
+							return errCanceled
+						}
+					}
+					deleteFlag := "-d"
+					if opts.forceBranch {
+						deleteFlag = "-D"
+					}
+					if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "branch", deleteFlag, branch); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -74,7 +124,8 @@ func newCleanupCommand(state *runState) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&opts.removeWorktree, "remove-worktree", opts.removeWorktree, "remove the task worktree")
-	cmd.Flags().BoolVar(&opts.removeBranch, "remove-branch", false, "remove the task branch")
+	cmd.Flags().BoolVar(&opts.removeBranch, "remove-branch", opts.removeBranch, "remove the task branch")
+	cmd.Flags().BoolVar(&opts.worktreeOnly, "worktree-only", false, "remove only the task worktree (keep branch)")
 	cmd.Flags().BoolVar(&opts.forceBranch, "force-branch", false, "force delete branch when removing")
 	cmd.Flags().BoolVar(&opts.yes, "yes", false, "skip confirmation prompts")
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")

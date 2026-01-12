@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.0.2"
+var Version = "0.0.3"
 
 var errCanceled = errors.New("git worktree task process canceled")
 
@@ -16,7 +16,7 @@ func Execute() int {
 	cmd, state := gitWorkTreeCommand()
 	if err := cmd.Execute(); err != nil {
 		if errors.Is(err, errCanceled) {
-			fmt.Fprintln(cmd.ErrOrStderr(), "scan canceled")
+			fmt.Fprintln(cmd.ErrOrStderr(), "git worktree task process canceled")
 			return 3
 		}
 		fmt.Fprintln(cmd.ErrOrStderr(), err)

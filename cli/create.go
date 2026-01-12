@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
 	"github.com/spf13/cobra"
@@ -11,11 +12,14 @@ import (
 
 type createOptions struct {
 	base   string
+	path   string
+	output string
+	copyCd bool
 	dryRun bool
 }
 
 func newCreateCommand(state *runState) *cobra.Command {
-	opts := &createOptions{base: "main"}
+	opts := &createOptions{base: "main", output: "text"}
 	cmd := &cobra.Command{
 		Use:   "create <task>",
 		Short: "Create a worktree and branch for a task",
@@ -31,6 +35,17 @@ func newCreateCommand(state *runState) *cobra.Command {
 			repo := repoName(repoRoot)
 			task := worktree.SlugifyTask(args[0])
 			path := worktree.WorktreePath(repoRoot, repo, task)
+			if opts.path != "" {
+				path = worktreePathOverride(repoRoot, opts.path)
+			}
+
+			worktreeExists, err := worktree.Exists(ctx, runner, repoRoot, path)
+			if err != nil {
+				return err
+			}
+			if worktreeExists {
+				return handleExistingWorktree(ctx, cmd, repoRoot, path, task, opts)
+			}
 
 			if _, err := os.Stat(path); err == nil {
 				return fmt.Errorf("worktree path already exists: %s", path)
@@ -51,12 +66,33 @@ func newCreateCommand(state *runState) *cobra.Command {
 				return fmt.Errorf("create worktree: %w", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "worktree ready: %s (branch: %s)\n", path, branch)
+			display := displayPath(repoRoot, path, false)
+			switch opts.output {
+			case "text":
+				fmt.Fprintf(cmd.OutOrStdout(), "worktree ready: %s (branch: %s)\n", display, branch)
+				if opts.copyCd {
+					cdCommand := fmt.Sprintf("cd %s", display)
+					if err := copyToClipboard(ctx, cdCommand); err != nil {
+						return err
+					}
+					fmt.Fprintf(cmd.OutOrStdout(), "copied to clipboard: %s\n", cdCommand)
+				}
+			case "raw":
+				if opts.copyCd {
+					return fmt.Errorf("copy-cd is not supported with --output raw")
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), display)
+			default:
+				return fmt.Errorf("unsupported output format: %s", opts.output)
+			}
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVar(&opts.base, "base", opts.base, "base branch to create from")
+	cmd.Flags().StringVarP(&opts.path, "path", "p", "", "override worktree path (relative to repo root or absolute)")
+	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: text or raw")
+	cmd.Flags().BoolVar(&opts.copyCd, "copy-cd", false, "copy a ready-to-run cd command to the clipboard")
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
 
 	return cmd
@@ -64,4 +100,34 @@ func newCreateCommand(state *runState) *cobra.Command {
 
 func stringSlice(args []string) string {
 	return fmt.Sprintf("%s", args)
+}
+
+func worktreePathOverride(repoRoot, path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(repoRoot, path)
+}
+
+func handleExistingWorktree(ctx context.Context, cmd *cobra.Command, repoRoot, path, task string, opts *createOptions) error {
+	display := displayPath(repoRoot, path, false)
+	switch opts.output {
+	case "text":
+		fmt.Fprintf(cmd.OutOrStdout(), "worktree exists: %s (branch: %s)\n", display, task)
+		if opts.copyCd {
+			cdCommand := fmt.Sprintf("cd %s", display)
+			if err := copyToClipboard(ctx, cdCommand); err != nil {
+				return err
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "copied to clipboard: %s\n", cdCommand)
+		}
+	case "raw":
+		if opts.copyCd {
+			return fmt.Errorf("copy-cd is not supported with --output raw")
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), display)
+	default:
+		return fmt.Errorf("unsupported output format: %s", opts.output)
+	}
+	return nil
 }
