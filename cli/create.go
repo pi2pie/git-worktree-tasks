@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
+	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -69,13 +70,20 @@ func newCreateCommand(state *runState) *cobra.Command {
 			display := displayPath(repoRoot, path, false)
 			switch opts.output {
 			case "text":
-				fmt.Fprintf(cmd.OutOrStdout(), "worktree ready: %s (branch: %s)\n", display, branch)
+				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
+					ui.SuccessStyle.Render("worktree ready"),
+					ui.AccentStyle.Render(display),
+					ui.AccentStyle.Render(branch),
+				)
 				if opts.copyCd {
 					cdCommand := fmt.Sprintf("cd %s", display)
 					if err := copyToClipboard(ctx, cdCommand); err != nil {
 						return err
 					}
-					fmt.Fprintf(cmd.OutOrStdout(), "copied to clipboard: %s\n", cdCommand)
+					fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n",
+						ui.SuccessStyle.Render("copied to clipboard"),
+						ui.AccentStyle.Render(cdCommand),
+					)
 				}
 			case "raw":
 				if opts.copyCd {
@@ -113,13 +121,20 @@ func handleExistingWorktree(ctx context.Context, cmd *cobra.Command, repoRoot, p
 	display := displayPath(repoRoot, path, false)
 	switch opts.output {
 	case "text":
-		fmt.Fprintf(cmd.OutOrStdout(), "worktree exists: %s (branch: %s)\n", display, task)
+		fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
+			ui.WarningStyle.Render("worktree exists"),
+			ui.AccentStyle.Render(display),
+			ui.AccentStyle.Render(task),
+		)
 		if opts.copyCd {
 			cdCommand := fmt.Sprintf("cd %s", display)
 			if err := copyToClipboard(ctx, cdCommand); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "copied to clipboard: %s\n", cdCommand)
+			fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n",
+				ui.SuccessStyle.Render("copied to clipboard"),
+				ui.AccentStyle.Render(cdCommand),
+			)
 		}
 	case "raw":
 		if opts.copyCd {

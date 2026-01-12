@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
-	"text/tabwriter"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/git"
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
+	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -109,13 +111,48 @@ func newStatusCommand(state *runState) *cobra.Command {
 func renderStatus(cmd *cobra.Command, format string, rows []statusRow) error {
 	switch format {
 	case "table":
-		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 8, 2, ' ', 0)
-		fmt.Fprintln(w, "TASK\tBRANCH\tPATH\tBASE\tTARGET\tLAST_COMMIT\tDIRTY\tAHEAD\tBEHIND")
-		for _, row := range rows {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%t\t%d\t%d\n",
-				row.Task, row.Branch, row.Path, row.Base, row.Target, row.LastCommit, row.Dirty, row.Ahead, row.Behind)
+		columns := []tableColumn{
+			{Header: "TASK"},
+			{Header: "BRANCH", Style: func(value string) lipgloss.Style { return ui.AccentStyle }},
+			{Header: "PATH"},
+			{Header: "BASE", Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
+			{Header: "TARGET", Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
+			{Header: "LAST_COMMIT", Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
+			{Header: "DIRTY", Style: func(value string) lipgloss.Style {
+				if value == "true" {
+					return ui.WarningStyle
+				}
+				return ui.SuccessStyle
+			}},
+			{Header: "AHEAD", Style: func(value string) lipgloss.Style {
+				if value != "0" {
+					return ui.WarningStyle
+				}
+				return ui.MutedStyle
+			}},
+			{Header: "BEHIND", Style: func(value string) lipgloss.Style {
+				if value != "0" {
+					return ui.ErrorStyle
+				}
+				return ui.MutedStyle
+			}},
 		}
-		return w.Flush()
+		tableRows := make([][]string, 0, len(rows))
+		for _, row := range rows {
+			tableRows = append(tableRows, []string{
+				row.Task,
+				row.Branch,
+				row.Path,
+				row.Base,
+				row.Target,
+				row.LastCommit,
+				strconv.FormatBool(row.Dirty),
+				strconv.Itoa(row.Ahead),
+				strconv.Itoa(row.Behind),
+			})
+		}
+		renderTable(cmd, columns, tableRows)
+		return nil
 	case "json":
 		payload, err := json.MarshalIndent(rows, "", "  ")
 		if err != nil {

@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
-	"text/tabwriter"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
+	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -85,12 +87,30 @@ func newListCommand(state *runState) *cobra.Command {
 func renderList(cmd *cobra.Command, format string, rows []listRow) error {
 	switch format {
 	case "table":
-		w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 8, 2, ' ', 0)
-		fmt.Fprintln(w, "TASK\tBRANCH\tPATH\tPRESENT\tHEAD")
-		for _, row := range rows {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%t\t%s\n", row.Task, row.Branch, row.Path, row.Present, row.Head)
+		columns := []tableColumn{
+			{Header: "TASK"},
+			{Header: "BRANCH", Style: func(value string) lipgloss.Style { return ui.AccentStyle }},
+			{Header: "PATH"},
+			{Header: "PRESENT", Style: func(value string) lipgloss.Style {
+				if value == "true" {
+					return ui.SuccessStyle
+				}
+				return ui.ErrorStyle
+			}},
+			{Header: "HEAD", Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
 		}
-		return w.Flush()
+		tableRows := make([][]string, 0, len(rows))
+		for _, row := range rows {
+			tableRows = append(tableRows, []string{
+				row.Task,
+				row.Branch,
+				row.Path,
+				strconv.FormatBool(row.Present),
+				row.Head,
+			})
+		}
+		renderTable(cmd, columns, tableRows)
+		return nil
 	case "json":
 		payload, err := json.MarshalIndent(rows, "", "  ")
 		if err != nil {

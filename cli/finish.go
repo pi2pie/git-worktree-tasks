@@ -6,6 +6,7 @@ import (
 
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/git"
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
+	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -124,7 +125,11 @@ func newFinishCommand(state *runState) *cobra.Command {
 				}
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "merged %s into %s\n", branch, target)
+			fmt.Fprintf(cmd.OutOrStdout(), "%s %s %s\n",
+				ui.SuccessStyle.Render("merged"),
+				ui.AccentStyle.Render(branch),
+				ui.MutedStyle.Render(fmt.Sprintf("into %s", target)),
+			)
 			return nil
 		},
 	}

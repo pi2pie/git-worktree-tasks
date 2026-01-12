@@ -5,10 +5,18 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 )
 
 func confirmPrompt(in io.Reader, out io.Writer, message string) (bool, error) {
-	fmt.Fprintf(out, "%s Type 'yes' to confirm: ", message)
+	prompt := ui.PromptStyle.Render(message)
+	confirmation := fmt.Sprintf("%s %s %s",
+		ui.MutedStyle.Render("Type"),
+		ui.AccentStyle.Render("'yes'"),
+		ui.MutedStyle.Render("to confirm:"),
+	)
+	fmt.Fprintf(out, "%s %s ", prompt, confirmation)
 	reader := bufio.NewReader(in)
 	line, err := reader.ReadString('\n')
 	if err != nil && err != io.EOF {

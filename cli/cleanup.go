@@ -6,6 +6,7 @@ import (
 
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/git"
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
+	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -62,12 +63,18 @@ func newCleanupCommand(state *runState) *cobra.Command {
 			if opts.removeWorktree && !worktreeExists {
 				if opts.removeBranch {
 					if branchExists {
-						fmt.Fprintf(cmd.OutOrStdout(), "no worktree found for task %q; branch %q exists\n", task, branch)
+						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+							ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q; branch %q exists", task, branch)),
+						)
 					} else {
-						fmt.Fprintf(cmd.OutOrStdout(), "no worktree found for task %q; no branch %q\n", task, branch)
+						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+							ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q; no branch %q", task, branch)),
+						)
 					}
 				} else {
-					fmt.Fprintf(cmd.OutOrStdout(), "no worktree found for task %q\n", task)
+					fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+						ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q", task)),
+					)
 				}
 			}
 
@@ -92,7 +99,9 @@ func newCleanupCommand(state *runState) *cobra.Command {
 			if opts.removeBranch {
 				if !branchExists {
 					if !(opts.removeWorktree && !worktreeExists) {
-						fmt.Fprintf(cmd.OutOrStdout(), "no branch %q to remove\n", branch)
+						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+							ui.WarningStyle.Render(fmt.Sprintf("no branch %q to remove", branch)),
+						)
 					}
 				} else {
 					if !opts.yes {
@@ -118,7 +127,7 @@ func newCleanupCommand(state *runState) *cobra.Command {
 				}
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), "cleanup complete")
+			fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("cleanup complete"))
 			return nil
 		},
 	}
