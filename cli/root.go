@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.0.6-canary.3"
+var Version = "0.0.6"
 
 var (
 	errCanceled     = errors.New("git worktree task process canceled")
@@ -86,12 +86,12 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 	}
 
 	cmd.AddCommand(
-		newCreateCommand(state),
-		newFinishCommand(state),
-		newCleanupCommand(state),
-		newListCommand(state),
-		newStatusCommand(state),
-		newTUICommand(state),
+		newCreateCommand(),
+		newFinishCommand(),
+		newCleanupCommand(),
+		newListCommand(),
+		newStatusCommand(),
+		newTUICommand(),
 	)
 
 	return cmd, state

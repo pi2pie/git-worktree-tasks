@@ -18,9 +18,9 @@ func repoRoot(ctx context.Context, runner git.Runner) (string, error) {
 	return git.RepoRoot(ctx, runner)
 }
 
-func repoName(root string) string {
-	return filepath.Base(root)
-}
+// func repoName(root string) string {
+// 	return filepath.Base(root)
+// }
 
 func repoBaseName(ctx context.Context, runner git.Runner) (string, error) {
 	root, err := repoRoot(ctx, runner)

@@ -19,7 +19,7 @@ type cleanupOptions struct {
 	dryRun         bool
 }
 
-func newCleanupCommand(state *runState) *cobra.Command {
+func newCleanupCommand() *cobra.Command {
 	opts := &cleanupOptions{removeWorktree: true, removeBranch: true}
 	cmd := &cobra.Command{
 		Use:     "cleanup <task>",

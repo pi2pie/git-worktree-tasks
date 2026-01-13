@@ -37,7 +37,7 @@ type statusRow struct {
 	Behind     int    `json:"behind"`
 }
 
-func newStatusCommand(state *runState) *cobra.Command {
+func newStatusCommand() *cobra.Command {
 	opts := &statusOptions{output: "table"}
 	cmd := &cobra.Command{
 		Use:   "status [task]",
