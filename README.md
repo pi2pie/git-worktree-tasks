@@ -245,6 +245,8 @@ Output only the worktree path for a task (raw mode):
 cd "$(git-worktree-tasks list \"my-task\" --output raw)"
 ```
 
+If the task branch exists but no worktree is present, raw output falls back to the main worktree path.
+
 Show detailed status:
 
 ```bash
@@ -256,6 +258,8 @@ Filter status by task name (slugified internally, contains match):
 ```bash
 git-worktree-tasks status "my-task"
 ```
+
+If the task has no worktree, status reports the main worktree state.
 
 Show absolute paths when needed:
 

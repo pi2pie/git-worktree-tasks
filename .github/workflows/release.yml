@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g., v1.2.3 or v1.2.3-rc.1)"
+        required: true
+      prerelease:
+        description: "Mark release as prerelease"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+
+      - name: Verify tag exists (manual runs)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            echo "Tag '${RELEASE_TAG}' points to commit:"
+            git rev-list -n 1 "${RELEASE_TAG}"
+            exit 0
+          fi
+          if ! git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            echo "Tag '${RELEASE_TAG}' not found locally. Ensure it exists in the repo." >&2
+            echo "Available tags (latest 20) with commit SHAs:" >&2
+            git for-each-ref --sort=-version:refname --count=20 \
+              --format='%(refname:short) %(objectname)' refs/tags >&2
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: go test ./...
+
+  goreleaser:
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+
+      - name: Verify tag exists (manual runs)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            echo "Tag '${RELEASE_TAG}' points to commit:"
+            git rev-list -n 1 "${RELEASE_TAG}"
+            exit 0
+          fi
+          if ! git rev-parse -q --verify "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            echo "Tag '${RELEASE_TAG}' not found locally. Ensure it exists in the repo." >&2
+            echo "Available tags (latest 20) with commit SHAs:" >&2
+            git for-each-ref --sort=-version:refname --count=20 \
+              --format='%(refname:short) %(objectname)' refs/tags >&2
+            exit 1
+          fi
+
+      # Determine if this is a pre-release based on tag name
+      - name: Check pre-release status
+        id: prerelease
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if [[ ${RELEASE_TAG} == *-alpha* || ${RELEASE_TAG} == *-beta* || ${RELEASE_TAG} == *-rc* ]] || [[ ${RELEASE_TAG} == *-canary* ]]; then
+            echo "IS_PRERELEASE=true" >> $GITHUB_OUTPUT
+          else
+            echo "IS_PRERELEASE=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pass the pre-release flag to GoReleaser
+          GORELEASER_CURRENT_TAG: ${{ inputs.tag || github.ref_name }}
+          GORELEASER_PRERELEASE: ${{ inputs.prerelease || steps.prerelease.outputs.IS_PRERELEASE }}

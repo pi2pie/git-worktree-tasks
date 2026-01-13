@@ -98,6 +98,21 @@ func newListCommand(state *runState) *cobra.Command {
 				rows = append(rows, row)
 			}
 
+			if opts.output == "raw" && len(rows) == 0 {
+				fallbackBranch := opts.branch
+				if fallbackBranch == "" {
+					fallbackBranch = query
+				}
+				path, ok, err := fallbackPathForBranch(ctx, runner, repoRoot, fallbackBranch)
+				if err != nil {
+					return err
+				}
+				if ok {
+					fmt.Fprintln(cmd.OutOrStdout(), displayPath(repoRoot, path, opts.abs))
+					return nil
+				}
+			}
+
 			return renderList(cmd, opts.output, rows, opts.grid)
 		},
 	}
