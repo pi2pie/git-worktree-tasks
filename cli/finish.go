@@ -23,7 +23,7 @@ type finishOptions struct {
 	dryRun         bool
 }
 
-func newFinishCommand(state *runState) *cobra.Command {
+func newFinishCommand() *cobra.Command {
 	opts := &finishOptions{}
 	cmd := &cobra.Command{
 		Use:   "finish <task>",

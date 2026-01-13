@@ -86,12 +86,12 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 	}
 
 	cmd.AddCommand(
-		newCreateCommand(state),
-		newFinishCommand(state),
-		newCleanupCommand(state),
-		newListCommand(state),
-		newStatusCommand(state),
-		newTUICommand(state),
+		newCreateCommand(),
+		newFinishCommand(),
+		newCleanupCommand(),
+		newListCommand(),
+		newStatusCommand(),
+		newTUICommand(),
 	)
 
 	return cmd, state

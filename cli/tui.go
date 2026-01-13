@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newTUICommand(state *runState) *cobra.Command {
+func newTUICommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "ui",
 		Short:  "Launch the TUI (preview)",

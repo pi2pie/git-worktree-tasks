@@ -21,7 +21,7 @@ type createOptions struct {
 	skipExisting bool
 }
 
-func newCreateCommand(state *runState) *cobra.Command {
+func newCreateCommand() *cobra.Command {
 	opts := &createOptions{base: "main", output: "text"}
 	cmd := &cobra.Command{
 		Use:   "create <task>",

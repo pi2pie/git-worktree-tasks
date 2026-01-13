@@ -31,7 +31,7 @@ type listRow struct {
 	Head    string `json:"head"`
 }
 
-func newListCommand(state *runState) *cobra.Command {
+func newListCommand() *cobra.Command {
 	opts := &listOptions{output: "table"}
 	cmd := &cobra.Command{
 		Use:     "list [task]",
