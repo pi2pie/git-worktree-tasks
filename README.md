@@ -179,6 +179,8 @@ export GWTT_THEME=nord
 name = "nord"
 ```
 
+Example file: `examples/gwtt.config.toml`
+
 **User config:** `$HOME/.config/gwtt/config.toml`
 ```toml
 [theme]
