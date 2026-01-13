@@ -16,7 +16,6 @@ import (
 
 type listOptions struct {
 	output string
-	task   string
 	branch string
 	field  string
 	abs    bool
@@ -50,22 +49,12 @@ func newListCommand(state *runState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if len(args) == 1 && opts.task != "" {
-				return fmt.Errorf("use either --task or [task], not both")
-			}
 			var query string
 			if len(args) == 1 {
 				query, err = normalizeTaskQuery(args[0])
 				if err != nil {
 					return err
 				}
-			}
-			if opts.task != "" {
-				query, err = normalizeTaskQuery(opts.task)
-				if err != nil {
-					return err
-				}
-				opts.strict = true
 			}
 			if opts.output == "raw" && query == "" && opts.branch == "" {
 				return fmt.Errorf("raw output requires a task or branch filter")
@@ -123,8 +112,6 @@ func newListCommand(state *runState) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: table, json, csv, or raw")
-	cmd.Flags().StringVar(&opts.task, "task", "", "filter by task name")
-	_ = cmd.Flags().MarkHidden("task")
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
 	cmd.Flags().StringVarP(&opts.field, "field", "f", "", "raw output field: path, task, or branch (default path)")
 	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
