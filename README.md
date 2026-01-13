@@ -155,6 +155,36 @@ git-worktree-tasks --version
 gwtt --version
 ```
 
+## Configuration
+
+### Theme Selection
+
+You can set a default theme using either an environment variable or a TOML config file.
+
+**Precedence (highest to lowest):**
+1. `--theme` flag
+2. `GWTT_THEME` environment variable
+3. Project config (`gwtt.config.toml`, then `gwtt.toml`)
+4. User config (`$HOME/.config/gwtt/config.toml`)
+5. Built-in default theme
+
+**Environment variable:**
+```bash
+export GWTT_THEME=nord
+```
+
+**Project config (repo root):** `gwtt.config.toml` or `gwtt.toml`
+```toml
+[theme]
+name = "nord"
+```
+
+**User config:** `$HOME/.config/gwtt/config.toml`
+```toml
+[theme]
+name = "nord"
+```
+
 ## Usage
 
 Create a worktree for a task:
