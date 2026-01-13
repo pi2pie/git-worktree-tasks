@@ -2,33 +2,48 @@
 
 A small CLI to manage task-based Git worktrees with predictable naming and cleanup flows.
 
+## Quick Start
+
+```bash
+# Install (requires Go 1.25.5+)
+make go-install
+
+# Create a task worktree
+gwtt create "my-feature" --base main
+
+# List all worktrees
+gwtt list
+
+# Show status
+gwtt status
+
+# Cleanup when done
+gwtt cleanup "my-feature"
+```
+
+---
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Shell Configuration](#shell-configuration)
+- [Configuration](#configuration)
+- [Usage Guide](#usage-guide)
+  - [Commands Overview](#commands-overview)
+  - [Creating Worktrees](#creating-worktrees)
+  - [Listing Worktrees](#listing-worktrees)
+  - [Checking Status](#checking-status)
+  - [Finishing Tasks](#finishing-tasks)
+  - [Cleanup](#cleanup)
+- [Output Formats & Piping](#output-formats--piping)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## Installation
 
-### Quick Start (For Go Developers)
-
-If you have Go installed and want both `git-worktree-tasks` and `gwtt` commands:
-
-```bash
-make go-install
-```
-
-Then add a shell alias (choose one):
-
-**Bash/Zsh** — Add to `~/.bashrc` or `~/.zshrc`:
-```bash
-alias gwtt="git-worktree-tasks"
-```
-
-**Fish** — Add to `~/.config/fish/config.fish`:
-```fish
-alias gwtt git-worktree-tasks
-```
-
-### Installation Options
-
-#### Option 1: Using Makefile (Recommended for developers)
-
-Clone the repo and use the Makefile target:
+### Option 1: Using Makefile (Recommended)
 
 ```bash
 git clone https://github.com/dev-pi2pie/git-worktree-tasks
@@ -36,365 +51,417 @@ cd git-worktree-tasks
 make go-install
 ```
 
-This builds and installs both `git-worktree-tasks` and `gwtt` binaries to `$GOPATH/bin`.
+This installs both `git-worktree-tasks` and `gwtt` binaries to `$GOPATH/bin`.
 
-#### Option 2: Using Installation Script Directly
+### Option 2: Using Installation Script
 
 ```bash
 ./scripts/go-install.sh
-# Or with custom installation directory:
+# Or with custom directory:
 ./scripts/go-install.sh /usr/local/bin
 ```
 
-#### Option 3: Standard Go Install (Basic)
-
-For just the `git-worktree-tasks` binary:
+### Option 3: Standard Go Install
 
 ```bash
-# From source (local clone)
-git clone https://github.com/dev-pi2pie/git-worktree-tasks
-cd git-worktree-tasks
-go install ./
-
-# Or from GitHub directly
 go install github.com/dev-pi2pie/git-worktree-tasks@latest
 ```
 
-This creates only the `git-worktree-tasks` binary. To use `gwtt`, see [Shell Configuration](#shell-configuration) below.
+> **Note:** This creates only `git-worktree-tasks`. For `gwtt`, add a shell alias (see below).
 
-#### Option 4: Build Locally
+### Option 4: Build Locally
 
 ```bash
-git clone https://github.com/dev-pi2pie/git-worktree-tasks
-cd git-worktree-tasks
 make build
-# or: go build -o dist/git-worktree-tasks ./
+# Binaries in dist/
 ```
-
-The binaries will be in the `dist/` directory.
 
 ### Requirements
 
-- **Go 1.25.5 or higher** — Required for building from source
-- **`$GOPATH/bin` in your `$PATH`** — Required for `go-install` targets (standard Go setup)
+- **Go 1.25.5+** for building
+- **`$GOPATH/bin` in `$PATH`** for `go-install` targets
+
+---
 
 ## Shell Configuration
 
-After installation, you can configure your shell to use the `gwtt` shorthand.
+Set up the `gwtt` alias for convenience:
 
-### Option A: Shell Alias (Recommended)
+| Shell | Config File | Alias Syntax |
+|-------|-------------|--------------|
+| Bash  | `~/.bashrc` | `alias gwtt="git-worktree-tasks"` |
+| Zsh   | `~/.zshrc`  | `alias gwtt="git-worktree-tasks"` |
+| Fish  | `~/.config/fish/config.fish` | `alias gwtt git-worktree-tasks` |
 
-Simple, easy to add/remove, works in any shell.
+After adding, reload your shell (`source ~/.bashrc`, `source ~/.zshrc`, or `exec fish`).
 
-**Bash** — Add to `~/.bashrc`:
-```bash
-alias gwtt="git-worktree-tasks"
-```
-
-Then reload:
-```bash
-source ~/.bashrc
-```
-
-**Zsh** — Add to `~/.zshrc`:
-```bash
-alias gwtt="git-worktree-tasks"
-```
-
-Then reload:
-```bash
-source ~/.zshrc
-```
-
-**Fish** — Add to `~/.config/fish/config.fish`:
-```fish
-alias gwtt git-worktree-tasks
-```
-
-Note: Fish uses different syntax (no `=` operator).
-
-Then reload:
-```bash
-exec fish
-```
-
-### Option B: Manual Symlink
-
-Creates a binary-level symlink (works in all contexts, including scripts and IDEs).
-
+**Alternative:** Create a symlink:
 ```bash
 ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 ```
 
-### Removing the `gwtt` Shorthand
-
-**If using an alias:**
-- Delete the alias line from your shell config file
-- Reload your shell or restart your terminal
-
-**If using a symlink:**
-```bash
-rm $(which gwtt)
-```
-
-**If using uninstall script:**
-```bash
-make go-uninstall
-# or: ./scripts/go-uninstall.sh
-```
-
-## Verification
-
-Verify your installation:
-
-```bash
-# Check git-worktree-tasks
-git-worktree-tasks --version
-
-# Check gwtt (if configured)
-gwtt --version
-```
+---
 
 ## Configuration
 
 ### Theme Selection
 
-You can set a default theme using either an environment variable or a TOML config file.
+Set a color theme using (highest precedence first):
 
-**Precedence (highest to lowest):**
 1. `--theme` flag
 2. `GWTT_THEME` environment variable
-3. Project config (`gwtt.config.toml`, then `gwtt.toml`)
+3. Project config (`gwtt.config.toml` or `gwtt.toml` in repo root)
 4. User config (`$HOME/.config/gwtt/config.toml`)
-5. Built-in default theme
+5. Built-in default
 
-**Environment variable:**
 ```bash
+# Environment variable
 export GWTT_THEME=nord
+
+# List available themes
+gwtt --themes
 ```
 
-**Project config (repo root):** `gwtt.config.toml` or `gwtt.toml`
+**Config file format:**
 ```toml
 [theme]
 name = "nord"
 ```
 
-Example file: `examples/gwtt.config.toml`
+---
 
-**User config:** `$HOME/.config/gwtt/config.toml`
-```toml
-[theme]
-name = "nord"
-```
+## Usage Guide
 
-## Usage
+### Commands Overview
 
-Create a worktree for a task:
+| Command   | Alias | Description |
+|-----------|-------|-------------|
+| `create`  |       | Create a worktree and branch for a task |
+| `list`    | `ls`  | List task worktrees |
+| `status`  |       | Show detailed worktree status |
+| `finish`  |       | Merge a task branch into target |
+| `cleanup` | `rm`  | Remove a task worktree and/or branch |
 
-```bash
-git-worktree-tasks create "my-task" --base main
-```
-
-If the worktree path already exists, `create` exits with an error. To reuse it:
+### Creating Worktrees
 
 ```bash
-git-worktree-tasks create "my-task" --skip-existing
+# Basic usage
+gwtt create "my-task" --base main
+
+# Reuse existing worktree (no error if exists)
+gwtt create "my-task" --skip-existing
+
+# Custom path
+gwtt create "my-task" --path ../custom-location
+
+# Preview without executing
+gwtt create "my-task" --dry-run
 ```
 
-If a local branch already exists for the task, `create` reuses that branch when adding the worktree.
+**Flags:**
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--base` | | Base branch to create from (default: `main`) |
+| `--path` | `-p` | Override worktree path |
+| `--output` | `-o` | Output format: `text`, `raw` |
+| `--skip-existing` | `--skip` | Reuse existing worktree |
+| `--dry-run` | | Show git commands without executing |
 
-Create in a custom location (relative to repo root or absolute path):
+### Listing Worktrees
 
 ```bash
-git-worktree-tasks create "my-task" --path ../custom-location
+# List all worktrees
+gwtt list
+
+# Filter by task name (contains match)
+gwtt list "my-task"
+
+# Exact match
+gwtt list "my-task" --strict
+
+# Filter by branch
+gwtt list --branch feature-branch
+
+# Show absolute paths
+gwtt list --abs
+
+# Grid borders in table
+gwtt list --grid
 ```
 
-Output only the worktree path (raw mode, easy to pipe; `-o` alias):
+**Flags:**
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--output` | `-o` | Format: `table`, `json`, `csv`, `raw` |
+| `--field` | `-f` | Raw output field: `path`, `task`, `branch` |
+| `--branch` | | Filter by branch name |
+| `--absolute-path` | `--abs` | Show absolute paths |
+| `--strict` | | Require exact task match |
+| `--grid` | | Render table with grid borders |
+
+### Checking Status
 
 ```bash
-cd "$(git-worktree-tasks create \"my-task\" --base main --output raw)"
+# Show status of all worktrees
+gwtt status
+
+# Filter by task
+gwtt status "my-task"
+
+# Compare against specific target branch
+gwtt status --target main
+
+# Filter by exact task name
+gwtt status --task "my-task"
 ```
 
-Copy the worktree path after creation (pipe to clipboard):
+**Status columns:** Task, Branch, Path, Base, Target, Last Commit, Dirty, Ahead, Behind
+
+**Flags:**
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--output` | `-o` | Format: `table`, `json`, `csv` |
+| `--target` | | Target branch for ahead/behind comparison |
+| `--task` | | Filter by task name (enables strict match) |
+| `--branch` | | Filter by branch name |
+| `--absolute-path` | `--abs` | Show absolute paths |
+| `--strict` | | Require exact task match |
+| `--grid` | | Render table with grid borders |
+
+### Finishing Tasks
 
 ```bash
-git-worktree-tasks create "my-task" --base main --output raw | pbcopy
+# Merge task branch into target
+gwtt finish "my-task" --target main
+
+# Merge with cleanup (remove worktree + branch)
+gwtt finish "my-task" --target main --cleanup
+
+# Merge strategies
+gwtt finish "my-task" --no-ff        # No fast-forward
+gwtt finish "my-task" --squash       # Squash commits
+gwtt finish "my-task" --rebase       # Rebase before merge
+
+# Skip confirmation
+gwtt finish "my-task" --cleanup --yes
 ```
 
-List worktrees (relative paths by default):
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--target` | Target branch (default: current branch) |
+| `--cleanup` | Remove worktree and branch after merge |
+| `--remove-worktree` | Remove only the worktree after merge |
+| `--remove-branch` | Remove only the branch after merge |
+| `--force-branch` | Force delete branch (`-D` instead of `-d`) |
+| `--no-ff` | Use `--no-ff` merge |
+| `--squash` | Use `--squash` merge |
+| `--rebase` | Rebase task branch onto target first |
+| `--yes` | Skip confirmation prompts |
+| `--dry-run` | Show git commands without executing |
+
+### Cleanup
 
 ```bash
-git-worktree-tasks list
+# Remove worktree and branch (with confirmation)
+gwtt cleanup "my-task"
+
+# Remove only the worktree (keep branch)
+gwtt cleanup "my-task" --worktree-only
+
+# Force delete branch
+gwtt cleanup "my-task" --force-branch
+
+# Skip confirmation
+gwtt cleanup "my-task" --yes
+
+# Preview without executing
+gwtt cleanup "my-task" --dry-run
 ```
 
-List a single task by name (slugified internally, contains match):
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--remove-worktree` | Remove the task worktree (default: true) |
+| `--remove-branch` | Remove the task branch (default: true) |
+| `--worktree-only` | Remove only worktree, keep branch |
+| `--force-branch` | Force delete branch (`-D`) |
+| `--yes` | Skip confirmation prompts |
+| `--dry-run` | Show git commands without executing |
+
+---
+
+## Output Formats & Piping
+
+The `--output` (`-o`) and `--field` (`-f`) flags enable powerful shell integrations.
+
+### Output Formats
+
+| Format | Description | Available In |
+|--------|-------------|--------------|
+| `table` | Human-readable table (default) | `list`, `status` |
+| `json` | JSON array | `list`, `status` |
+| `csv` | CSV with headers | `list`, `status` |
+| `raw` | Single value, no decoration | `create`, `list` |
+| `text` | Styled text output (default) | `create` |
+
+### Field Selection (for `--output raw`)
+
+When using `--output raw` with `list`, specify which field to output:
+
+| Field | Description |
+|-------|-------------|
+| `path` | Worktree path (default) |
+| `task` | Task name |
+| `branch` | Branch name |
+
+### Piping Examples
+
+#### Navigate to a worktree
 
 ```bash
-git-worktree-tasks list "my-task"
+# Change to task worktree directory
+cd "$(gwtt list my-task -o raw)"
+
+# Or using create
+cd "$(gwtt create my-task --base main -o raw)"
 ```
 
-Copy the task name for cleanup workflows:
+#### Copy to clipboard
 
 ```bash
-git-worktree-tasks list "my-task" --output raw --field task | pbcopy
+# Copy worktree path
+gwtt list my-task -o raw | pbcopy                    # macOS
+gwtt list my-task -o raw | xclip -selection clipboard # Linux
+
+# Copy task name
+gwtt list my-task -o raw -f task | pbcopy
+
+# Copy branch name
+gwtt list my-task -o raw -f branch | pbcopy
 ```
 
-Require exact task match:
+#### Open in editor
 
 ```bash
-git-worktree-tasks list "my-task" --strict
+# Open worktree in VS Code
+code "$(gwtt list my-task -o raw)"
+
+# Open in Cursor
+cursor "$(gwtt list my-task -o raw)"
 ```
 
-Output only the worktree path for a task (raw mode):
+#### Scripting workflows
 
 ```bash
-cd "$(git-worktree-tasks list \"my-task\" --output raw)"
+# Create and open in one command
+code "$(gwtt create my-feature --base main -o raw)"
+
+# List all branches as plain text
+gwtt list -o json | jq -r '.[].branch'
+
+# Get paths for all worktrees
+gwtt list -o json | jq -r '.[].path'
+
+# Filter dirty worktrees
+gwtt status -o json | jq '.[] | select(.dirty == true)'
+
+# Count worktrees ahead of target
+gwtt status -o json | jq '[.[] | select(.ahead > 0)] | length'
 ```
 
-If the task branch exists but no worktree is present, raw output falls back to the main worktree path.
-
-Show detailed status:
+#### Shell function examples
 
 ```bash
-git-worktree-tasks status
+# Fish: Create and cd to worktree
+function gwtt-new
+    set path (gwtt create $argv[1] --base main -o raw)
+    and cd $path
+end
+
+# Bash/Zsh: Create and cd to worktree
+gwtt-new() {
+    local path
+    path=$(gwtt create "$1" --base main -o raw) && cd "$path"
+}
 ```
 
-Filter status by task name (slugified internally, contains match):
+### Raw Output Fallback
+
+When using `--output raw` with `list`:
+- If no matching worktree exists but the branch does, returns the main worktree path
+- Requires either a task filter or `--branch` flag
 
 ```bash
-git-worktree-tasks status "my-task"
+# Returns path even if no worktree exists (fallback to main repo)
+gwtt list feature-branch -o raw
 ```
 
-If the task has no worktree, status reports the main worktree state.
-
-Show absolute paths when needed:
-
-```bash
-git-worktree-tasks list --absolute-path
-git-worktree-tasks status --absolute-path
-```
-
-Machine-readable output formats:
-
-```bash
-git-worktree-tasks list --output json
-git-worktree-tasks list --output csv
-git-worktree-tasks status --output json
-git-worktree-tasks status --output csv
-```
-
-Finish a task (merge into target and cleanup):
-
-```bash
-git-worktree-tasks finish "my-task" --target main
-```
-
-Cleanup without merge:
-
-```bash
-git-worktree-tasks cleanup "my-task"
-```
-
-Cleanup only the worktree (keep the branch):
-
-```bash
-git-worktree-tasks cleanup "my-task" --worktree-only
-```
+---
 
 ## Development
 
 ### Build Targets
 
 ```bash
-# Build both binaries to dist/ directory
-make build
-
-# Install both binaries to $GOPATH/bin (for local development)
-make go-install
-
-# Remove installed binaries
-make go-uninstall
-
-# Clean up build artifacts (removes dist/ directory)
-make clean
-
-# Show all available targets
-make help
+make build        # Build binaries to dist/
+make go-install   # Install to $GOPATH/bin
+make go-uninstall # Remove installed binaries
+make clean        # Remove dist/
+make help         # Show all targets
 ```
 
 ### Project Structure
 
 ```
-./
-├── main.go                 # Entry point
-├── cli/                    # CLI command definitions
-├── internal/               # Internal packages
-├── ui/                     # UI/styling utilities
-├── tui/                    # Terminal UI components
-├── examples/               # Usage examples
-├── scripts/                # Installation/build scripts
-│   ├── go-install.sh       # Install both binaries to $GOPATH/bin
-│   └── go-uninstall.sh     # Remove installed binaries
-├── dist/                   # Build output directory (created by make build)
-├── docs/                   # Documentation and plans
-├── Makefile                # Build and installation targets
-├── go.mod                  # Go module definition
-└── README.md               # This file
+├── main.go           # Entry point
+├── cli/              # CLI command definitions
+├── internal/         # Internal packages (config, git, worktree)
+├── ui/               # UI/styling utilities
+├── tui/              # Terminal UI components (preview)
+├── examples/         # Example configs and shell functions
+├── scripts/          # Installation scripts
+├── docs/             # Documentation and plans
+├── Makefile          # Build targets
+└── go.mod            # Go module definition
 ```
 
-**Note:** The `dist/` directory is created during `make build` and should not be committed to git (see `.gitignore`).
-
-## Notes
-
-- Default worktree path uses the pattern `../<repo>_<task>`.
-- Create output shows relative paths by default.
-- Create `--output raw` prints only the worktree path (no extra text).
-- Create will report an existing task worktree and return the path instead of failing.
-- List/status include the matching branch column in table and JSON output.
-- Use `--output json` on list/status for machine-readable output.
-- Cleanup defaults to removing both the worktree and the task branch (with separate confirmations).
+---
 
 ## Troubleshooting
 
 ### `$GOPATH/bin` not in `$PATH`
 
-If `make go-install` succeeds but commands don't work, ensure `$GOPATH/bin` is in your `$PATH`:
-
 ```bash
 # Check if it's in PATH
 echo $PATH | grep $(go env GOPATH)/bin
 
-# If not, add to your shell config (~/.bashrc, ~/.zshrc, or ~/.config/fish/config.fish):
+# Add to shell config if missing
 export PATH="$(go env GOPATH)/bin:$PATH"
 ```
 
-### Permission Denied on Install
-
-If you get permission errors during `make go-install`:
+### Permission Denied
 
 ```bash
-# Check if directory is writable
-ls -ld $(go env GOBIN)
-
-# Use a custom installation directory
-make go-install INSTALL_DIR=$HOME/.local/bin
-# or
+# Use custom directory
 ./scripts/go-install.sh $HOME/.local/bin
 ```
 
 ### Shell Alias Not Working
 
-After adding an alias, reload your shell:
-
+Reload your shell after adding the alias:
 ```bash
-# Bash
-source ~/.bashrc
-
-# Zsh
-source ~/.zshrc
-
-# Fish
-exec fish
+source ~/.bashrc   # Bash
+source ~/.zshrc    # Zsh
+exec fish          # Fish
 ```
 
-Or restart your terminal.
+---
+
+## Notes
+
+- Default worktree path: `../<repo>_<task>`
+- Task names are slugified (lowercase, hyphens replace spaces)
+- Paths are relative by default; use `--abs` for absolute
+- Use `--dry-run` to preview git commands
+- Global flags: `--theme`, `--nocolor`, `--themes`

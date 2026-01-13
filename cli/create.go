@@ -50,7 +50,7 @@ func newCreateCommand() *cobra.Command {
 			}
 			if worktreeExists {
 				if opts.skipExisting {
-					return handleExistingWorktree(ctx, cmd, repoRoot, path, task, opts)
+					return handleExistingWorktree(cmd, repoRoot, path, task, opts)
 				}
 				return fmt.Errorf("worktree path already occupied: %s", displayPath(repoRoot, path, false))
 			}
@@ -116,7 +116,7 @@ func worktreePathOverride(repoRoot, path string) string {
 	return filepath.Join(repoRoot, path)
 }
 
-func handleExistingWorktree(ctx context.Context, cmd *cobra.Command, repoRoot, path, task string, opts *createOptions) error {
+func handleExistingWorktree(cmd *cobra.Command, repoRoot, path, task string, opts *createOptions) error {
 	display := displayPath(repoRoot, path, false)
 	switch opts.output {
 	case "text":
