@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.0.5"
+var Version = "0.0.6-canary.1"
 
 var (
 	errCanceled     = errors.New("git worktree task process canceled")
@@ -48,6 +48,7 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 	state := &runState{}
 	cmd := &cobra.Command{
 		Use:           "git-worktree-tasks",
+		Aliases:       []string{"gwtt"},
 		Short:         "Task-based git worktree helper",
 		Long:          "Create, manage, and clean up git worktrees based on task names.",
 		Version:       Version,
