@@ -28,6 +28,7 @@ archives:
         formats:
           - zip
     files:
+      # Only include these files (everything else excluded by default)
       - README.md
       - LICENSE*
 
