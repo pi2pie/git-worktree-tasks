@@ -118,6 +118,38 @@ func newStatusCommand(state *runState) *cobra.Command {
 				})
 			}
 
+			if len(rows) == 0 {
+				fallbackBranch := opts.branch
+				if fallbackBranch == "" {
+					fallbackBranch = query
+				}
+				path, ok, err := fallbackPathForBranch(ctx, runner, repoRoot, fallbackBranch)
+				if err != nil {
+					return err
+				}
+				if ok {
+					statusInfo, err := worktree.Status(ctx, runner, path, target)
+					if err != nil {
+						return err
+					}
+					branch, err := git.CurrentBranchAt(ctx, runner, path)
+					if err != nil {
+						return err
+					}
+					rows = append(rows, statusRow{
+						Task:       "-",
+						Branch:     branch,
+						Path:       displayPath(repoRoot, path, opts.abs),
+						Base:       statusInfo.Base,
+						Target:     target,
+						LastCommit: statusInfo.LastCommit,
+						Dirty:      statusInfo.Dirty,
+						Ahead:      statusInfo.Ahead,
+						Behind:     statusInfo.Behind,
+					})
+				}
+			}
+
 			return renderStatus(cmd, opts.output, rows, opts.grid)
 		},
 	}

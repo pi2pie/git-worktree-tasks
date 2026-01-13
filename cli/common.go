@@ -55,6 +55,46 @@ func displayPath(repoRoot, path string, absolute bool) string {
 	return rel
 }
 
+func mainWorktreePathFromCommonDir(repoRoot, commonDir string) string {
+	if commonDir == "" {
+		return repoRoot
+	}
+	if !filepath.IsAbs(commonDir) {
+		commonDir = filepath.Join(repoRoot, commonDir)
+	}
+	commonDir = filepath.Clean(commonDir)
+	if filepath.Base(commonDir) == ".git" {
+		return filepath.Dir(commonDir)
+	}
+	return repoRoot
+}
+
+func mainWorktreePath(ctx context.Context, runner git.Runner, repoRoot string) (string, error) {
+	commonDir, err := git.CommonDir(ctx, runner)
+	if err != nil {
+		return "", err
+	}
+	return mainWorktreePathFromCommonDir(repoRoot, commonDir), nil
+}
+
+func fallbackPathForBranch(ctx context.Context, runner git.Runner, repoRoot, branch string) (string, bool, error) {
+	if branch == "" {
+		return "", false, nil
+	}
+	exists, err := git.BranchExists(ctx, runner, repoRoot, branch)
+	if err != nil {
+		return "", false, err
+	}
+	if !exists {
+		return "", false, nil
+	}
+	path, err := mainWorktreePath(ctx, runner, repoRoot)
+	if err != nil {
+		return "", false, err
+	}
+	return path, true, nil
+}
+
 func normalizeTaskQuery(raw string) (string, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
