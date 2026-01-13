@@ -55,6 +55,13 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 		Version:       Version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if state.listThemes {
+				fmt.Fprintln(cmd.OutOrStdout(), strings.Join(ui.ThemeNames(), "\n"))
+				return errThemesListed
+			}
+			return cmd.Help()
+		},
 	}
 	cmd.CompletionOptions.DisableDefaultCmd = true
 
