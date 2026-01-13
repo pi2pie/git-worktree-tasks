@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/dev-pi2pie/git-worktree-tasks/internal/config"
 	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
@@ -67,7 +68,17 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 			fmt.Fprintln(cmd.OutOrStdout(), strings.Join(ui.ThemeNames(), "\n"))
 			return errThemesListed
 		}
-		if err := ui.SetTheme(state.theme); err != nil {
+		themeName := state.theme
+		if !cmd.Flags().Changed("theme") {
+			resolvedTheme, err := config.ResolveThemeName()
+			if err != nil {
+				return err
+			}
+			if strings.TrimSpace(resolvedTheme) != "" {
+				themeName = resolvedTheme
+			}
+		}
+		if err := ui.SetTheme(themeName); err != nil {
 			return err
 		}
 		ui.SetColorEnabled(!state.noColor)
