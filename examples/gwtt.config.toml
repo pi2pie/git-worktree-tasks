@@ -1,0 +1,5 @@
+# Example project-level config for git-worktree-tasks (gwtt)
+# Place this in your repo root as gwtt.config.toml or gwtt.toml
+
+[theme]
+name = "nord"
