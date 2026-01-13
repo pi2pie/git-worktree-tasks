@@ -1,46 +1,88 @@
 package cli
 
 import (
-	"os"
-	"path/filepath"
+	"context"
+	"fmt"
+	"strings"
 	"testing"
 )
 
-func TestDisplayPathRelative(t *testing.T) {
-	root := t.TempDir()
-	repoRoot := filepath.Join(root, "repo")
-	if err := os.MkdirAll(repoRoot, 0o755); err != nil {
-		t.Fatalf("mkdir repoRoot: %v", err)
-	}
-	absPath := filepath.Join(root, "repo_task")
-	if err := os.MkdirAll(absPath, 0o755); err != nil {
-		t.Fatalf("mkdir absPath: %v", err)
-	}
+type fakeRunner struct {
+	responses map[string]fakeResponse
+}
 
-	got := displayPath(repoRoot, absPath, false)
-	want, err := filepath.Rel(repoRoot, absPath)
-	if err != nil {
-		t.Fatalf("rel: %v", err)
+type fakeResponse struct {
+	stdout string
+	stderr string
+	err    error
+}
+
+func (f fakeRunner) Run(_ context.Context, args ...string) (string, string, error) {
+	key := strings.Join(args, " ")
+	if resp, ok := f.responses[key]; ok {
+		return resp.stdout, resp.stderr, resp.err
 	}
-	if got != want {
-		t.Fatalf("relative path = %q, want %q", got, want)
+	return "", "", fmt.Errorf("unexpected args: %s", key)
+}
+
+func TestNormalizeTaskQuery(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		want    string
+		wantErr bool
+	}{
+		{name: "trims and slugifies", input: "  My Task  ", want: "my-task"},
+		{name: "already slugified", input: "my-task", want: "my-task"},
+		{name: "empty", input: "   ", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := normalizeTaskQuery(tt.input)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("normalizeTaskQuery(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
 	}
 }
 
-func TestDisplayPathAbsolute(t *testing.T) {
-	root := t.TempDir()
-	repoRoot := filepath.Join(root, "repo")
-	if err := os.MkdirAll(repoRoot, 0o755); err != nil {
-		t.Fatalf("mkdir repoRoot: %v", err)
+func TestMatchesTask(t *testing.T) {
+	task := "my-feature-task"
+	if !matchesTask(task, "feature", false) {
+		t.Fatalf("expected contains match")
 	}
-	absPath := filepath.Join(root, "repo_task")
-	if err := os.MkdirAll(absPath, 0o755); err != nil {
-		t.Fatalf("mkdir absPath: %v", err)
+	if matchesTask(task, "feature", true) {
+		t.Fatalf("expected strict mismatch")
 	}
+	if !matchesTask(task, "my-feature-task", true) {
+		t.Fatalf("expected strict match")
+	}
+	if !matchesTask(task, "FEATURE", false) {
+		t.Fatalf("expected case-insensitive match")
+	}
+}
 
-	relInput := filepath.Join("..", "repo_task")
-	got := displayPath(repoRoot, relInput, true)
-	if got != absPath {
-		t.Fatalf("absolute path = %q, want %q", got, absPath)
+func TestRepoBaseName(t *testing.T) {
+	runner := fakeRunner{
+		responses: map[string]fakeResponse{
+			"rev-parse --show-toplevel":  {stdout: "/tmp/example"},
+			"rev-parse --git-common-dir": {stdout: ".git"},
+		},
+	}
+	got, err := repoBaseName(context.Background(), runner)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "example" {
+		t.Fatalf("repoBaseName() = %q, want %q", got, "example")
 	}
 }

@@ -37,7 +37,10 @@ func newFinishCommand(state *runState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			repo := repoName(repoRoot)
+			repo, err := repoBaseName(ctx, runner)
+			if err != nil {
+				return err
+			}
 
 			if opts.squash && opts.rebase {
 				return fmt.Errorf("--squash and --rebase cannot be used together")

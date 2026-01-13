@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -21,6 +22,7 @@ type statusOptions struct {
 	branch string
 	abs    bool
 	grid   bool
+	strict bool
 }
 
 type statusRow struct {
@@ -38,8 +40,9 @@ type statusRow struct {
 func newStatusCommand(state *runState) *cobra.Command {
 	opts := &statusOptions{output: "table"}
 	cmd := &cobra.Command{
-		Use:   "status",
+		Use:   "status [task]",
 		Short: "Show detailed worktree status",
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			runner := defaultRunner()
@@ -47,7 +50,27 @@ func newStatusCommand(state *runState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			repo := repoName(repoRoot)
+			repo, err := repoBaseName(ctx, runner)
+			if err != nil {
+				return err
+			}
+			if len(args) == 1 && opts.task != "" {
+				return fmt.Errorf("use either --task or [task], not both")
+			}
+			var query string
+			if len(args) == 1 {
+				query, err = normalizeTaskQuery(args[0])
+				if err != nil {
+					return err
+				}
+			}
+			if opts.task != "" {
+				query, err = normalizeTaskQuery(opts.task)
+				if err != nil {
+					return err
+				}
+				opts.strict = true
+			}
 
 			target := opts.target
 			if target == "" {
@@ -70,7 +93,7 @@ func newStatusCommand(state *runState) *cobra.Command {
 				if task == "" {
 					task = "-"
 				}
-				if opts.task != "" && task != opts.task {
+				if query != "" && !matchesTask(task, query, opts.strict) {
 					continue
 				}
 				if opts.branch != "" && branch != opts.branch {
@@ -99,13 +122,14 @@ func newStatusCommand(state *runState) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.output, "output", opts.output, "output format: table or json")
+	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: table, json, or csv")
 	cmd.Flags().StringVar(&opts.target, "target", "", "target branch for ahead/behind comparison")
 	cmd.Flags().StringVar(&opts.task, "task", "", "filter by task name")
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
 	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
 	cmd.Flags().BoolVar(&opts.abs, "abs", false, "alias for --absolute-path")
 	cmd.Flags().BoolVar(&opts.grid, "grid", false, "render table with grid borders")
+	cmd.Flags().BoolVar(&opts.strict, "strict", false, "require exact task match (after trimming and slugifying)")
 
 	return cmd
 }
@@ -162,6 +186,30 @@ func renderStatus(cmd *cobra.Command, format string, rows []statusRow, grid bool
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), string(payload))
 		return nil
+	case "csv":
+		writer := csv.NewWriter(cmd.OutOrStdout())
+		if err := writer.Write([]string{
+			"task", "branch", "path", "base", "target", "last_commit", "dirty", "ahead", "behind",
+		}); err != nil {
+			return err
+		}
+		for _, row := range rows {
+			if err := writer.Write([]string{
+				row.Task,
+				row.Branch,
+				row.Path,
+				row.Base,
+				row.Target,
+				row.LastCommit,
+				strconv.FormatBool(row.Dirty),
+				strconv.Itoa(row.Ahead),
+				strconv.Itoa(row.Behind),
+			}); err != nil {
+				return err
+			}
+		}
+		writer.Flush()
+		return writer.Error()
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)
 	}

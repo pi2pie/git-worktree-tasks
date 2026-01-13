@@ -163,6 +163,14 @@ Create a worktree for a task:
 git-worktree-tasks create "my-task" --base main
 ```
 
+If the worktree path already exists, `create` exits with an error. To reuse it:
+
+```bash
+git-worktree-tasks create "my-task" --skip-existing
+```
+
+If a local branch already exists for the task, `create` reuses that branch when adding the worktree.
+
 Create in a custom location (relative to repo root or absolute path):
 
 ```bash
@@ -187,10 +195,34 @@ List worktrees (relative paths by default):
 git-worktree-tasks list
 ```
 
+List a single task by name (slugified internally, contains match):
+
+```bash
+git-worktree-tasks list "my-task"
+```
+
+Require exact task match:
+
+```bash
+git-worktree-tasks list "my-task" --strict
+```
+
+Output only the worktree path for a task (raw mode):
+
+```bash
+cd "$(git-worktree-tasks list \"my-task\" --output raw)"
+```
+
 Show detailed status:
 
 ```bash
 git-worktree-tasks status
+```
+
+Filter status by task name (slugified internally, contains match):
+
+```bash
+git-worktree-tasks status "my-task"
 ```
 
 Show absolute paths when needed:
@@ -198,6 +230,15 @@ Show absolute paths when needed:
 ```bash
 git-worktree-tasks list --absolute-path
 git-worktree-tasks status --absolute-path
+```
+
+Machine-readable output formats:
+
+```bash
+git-worktree-tasks list --output json
+git-worktree-tasks list --output csv
+git-worktree-tasks status --output json
+git-worktree-tasks status --output csv
 ```
 
 Finish a task (merge into target and cleanup):

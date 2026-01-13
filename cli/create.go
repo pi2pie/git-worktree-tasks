@@ -6,17 +6,19 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/dev-pi2pie/git-worktree-tasks/internal/git"
 	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
 	"github.com/dev-pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 
 type createOptions struct {
-	base   string
-	path   string
-	output string
-	copyCd bool
-	dryRun bool
+	base         string
+	path         string
+	output       string
+	copyCd       bool
+	dryRun       bool
+	skipExisting bool
 }
 
 func newCreateCommand(state *runState) *cobra.Command {
@@ -33,7 +35,10 @@ func newCreateCommand(state *runState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			repo := repoName(repoRoot)
+			repo, err := repoBaseName(ctx, runner)
+			if err != nil {
+				return err
+			}
 			task := worktree.SlugifyTask(args[0])
 			path := worktree.WorktreePath(repoRoot, repo, task)
 			if opts.path != "" {
@@ -45,7 +50,10 @@ func newCreateCommand(state *runState) *cobra.Command {
 				return err
 			}
 			if worktreeExists {
-				return handleExistingWorktree(ctx, cmd, repoRoot, path, task, opts)
+				if opts.skipExisting {
+					return handleExistingWorktree(ctx, cmd, repoRoot, path, task, opts)
+				}
+				return fmt.Errorf("worktree path already occupied: %s", displayPath(repoRoot, path, false))
 			}
 
 			if _, err := os.Stat(path); err == nil {
@@ -53,7 +61,11 @@ func newCreateCommand(state *runState) *cobra.Command {
 			}
 
 			branch := task
-			gitArgs := []string{"-C", repoRoot, "worktree", "add", "-b", branch, path, opts.base}
+			branchExists, err := git.BranchExists(ctx, runner, repoRoot, branch)
+			if err != nil {
+				return err
+			}
+			gitArgs := buildCreateWorktreeArgs(repoRoot, path, branch, opts.base, branchExists)
 			if opts.dryRun {
 				fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(gitArgs))
 				return nil
@@ -102,6 +114,8 @@ func newCreateCommand(state *runState) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: text or raw")
 	cmd.Flags().BoolVar(&opts.copyCd, "copy-cd", false, "copy a ready-to-run cd command to the clipboard")
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
+	cmd.Flags().BoolVar(&opts.skipExisting, "skip-existing", false, "reuse an existing worktree path if present")
+	cmd.Flags().BoolVar(&opts.skipExisting, "skip", false, "alias for --skip-existing")
 
 	return cmd
 }
@@ -145,4 +159,12 @@ func handleExistingWorktree(ctx context.Context, cmd *cobra.Command, repoRoot, p
 		return fmt.Errorf("unsupported output format: %s", opts.output)
 	}
 	return nil
+}
+
+func buildCreateWorktreeArgs(repoRoot, path, branch, base string, branchExists bool) []string {
+	args := []string{"-C", repoRoot, "worktree", "add"}
+	if branchExists {
+		return append(args, path, branch)
+	}
+	return append(args, "-b", branch, path, base)
 }

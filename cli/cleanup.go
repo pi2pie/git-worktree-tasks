@@ -33,7 +33,10 @@ func newCleanupCommand(state *runState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			repo := repoName(repoRoot)
+			repo, err := repoBaseName(ctx, runner)
+			if err != nil {
+				return err
+			}
 			task := worktree.SlugifyTask(args[0])
 			path := worktree.WorktreePath(repoRoot, repo, task)
 			branch := task

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -19,6 +20,7 @@ type listOptions struct {
 	branch string
 	abs    bool
 	grid   bool
+	strict bool
 }
 
 type listRow struct {
@@ -32,9 +34,10 @@ type listRow struct {
 func newListCommand(state *runState) *cobra.Command {
 	opts := &listOptions{output: "table"}
 	cmd := &cobra.Command{
-		Use:     "list",
+		Use:     "list [task]",
 		Short:   "List task worktrees",
 		Aliases: []string{"ls"},
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			runner := defaultRunner()
@@ -42,7 +45,30 @@ func newListCommand(state *runState) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			repo := repoName(repoRoot)
+			repo, err := repoBaseName(ctx, runner)
+			if err != nil {
+				return err
+			}
+			if len(args) == 1 && opts.task != "" {
+				return fmt.Errorf("use either --task or [task], not both")
+			}
+			var query string
+			if len(args) == 1 {
+				query, err = normalizeTaskQuery(args[0])
+				if err != nil {
+					return err
+				}
+			}
+			if opts.task != "" {
+				query, err = normalizeTaskQuery(opts.task)
+				if err != nil {
+					return err
+				}
+				opts.strict = true
+			}
+			if opts.output == "raw" && query == "" && opts.branch == "" {
+				return fmt.Errorf("raw output requires a task or branch filter")
+			}
 
 			worktrees, err := worktree.List(ctx, runner, repoRoot)
 			if err != nil {
@@ -63,7 +89,7 @@ func newListCommand(state *runState) *cobra.Command {
 					Present: true,
 					Head:    worktree.ShortHash(wt.Head),
 				}
-				if opts.task != "" && row.Task != opts.task {
+				if query != "" && !matchesTask(row.Task, query, opts.strict) {
 					continue
 				}
 				if opts.branch != "" && row.Branch != opts.branch {
@@ -76,12 +102,13 @@ func newListCommand(state *runState) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.output, "output", opts.output, "output format: table or json")
+	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: table, json, csv, or raw")
 	cmd.Flags().StringVar(&opts.task, "task", "", "filter by task name")
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
 	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
 	cmd.Flags().BoolVar(&opts.abs, "abs", false, "alias for --absolute-path")
 	cmd.Flags().BoolVar(&opts.grid, "grid", false, "render table with grid borders")
+	cmd.Flags().BoolVar(&opts.strict, "strict", false, "require exact task match (after trimming and slugifying)")
 
 	return cmd
 }
@@ -119,6 +146,30 @@ func renderList(cmd *cobra.Command, format string, rows []listRow, grid bool) er
 			return err
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), string(payload))
+		return nil
+	case "csv":
+		writer := csv.NewWriter(cmd.OutOrStdout())
+		if err := writer.Write([]string{"task", "branch", "path", "present", "head"}); err != nil {
+			return err
+		}
+		for _, row := range rows {
+			if err := writer.Write([]string{
+				row.Task,
+				row.Branch,
+				row.Path,
+				strconv.FormatBool(row.Present),
+				row.Head,
+			}); err != nil {
+				return err
+			}
+		}
+		writer.Flush()
+		return writer.Error()
+	case "raw":
+		if len(rows) == 0 {
+			return fmt.Errorf("no matching worktrees found")
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), rows[0].Path)
 		return nil
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)
