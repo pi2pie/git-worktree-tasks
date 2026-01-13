@@ -209,16 +209,16 @@ Create in a custom location (relative to repo root or absolute path):
 git-worktree-tasks create "my-task" --path ../custom-location
 ```
 
-Copy a ready-to-run `cd` command after creation:
-
-```bash
-git-worktree-tasks create "my-task" --base main --copy-cd
-```
-
 Output only the worktree path (raw mode, easy to pipe; `-o` alias):
 
 ```bash
 cd "$(git-worktree-tasks create \"my-task\" --base main --output raw)"
+```
+
+Copy the worktree path after creation (pipe to clipboard):
+
+```bash
+git-worktree-tasks create "my-task" --base main --output raw | pbcopy
 ```
 
 List worktrees (relative paths by default):
@@ -231,6 +231,12 @@ List a single task by name (slugified internally, contains match):
 
 ```bash
 git-worktree-tasks list "my-task"
+```
+
+Copy the task name for cleanup workflows:
+
+```bash
+git-worktree-tasks list "my-task" --output raw --field task | pbcopy
 ```
 
 Require exact task match:
