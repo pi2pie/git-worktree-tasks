@@ -106,6 +106,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           # Pass the pre-release flag to GoReleaser
           GORELEASER_CURRENT_TAG: ${{ inputs.tag || github.ref_name }}
           GORELEASER_PRERELEASE: ${{ inputs.prerelease || steps.prerelease.outputs.IS_PRERELEASE }}
