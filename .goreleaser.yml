@@ -30,8 +30,7 @@ builds:
     binary: gwtt
 
 archives:
-  - format: tar.gz
-    name_template: >-
+  - name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- title .Os }}_
@@ -39,9 +38,12 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
+    formats:
+      - tar.gz
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     files:
       - README.md
       - LICENSE*
@@ -50,7 +52,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   use: github
@@ -72,11 +74,8 @@ changelog:
       order: 1
     - title: Others
       order: 999
-  # Use short commit SHA (7 characters) for better GitHub rendering
-  format: |
-    {{- range .Changes }}
-    * {{ .Message | trim }} ({{ .ShortCommit }})
-    {{- end }}
+  # Abbreviated commits are enabled by default in v2
+  abbrev: 7
 
 release:
   # Determine pre-release status from tag name
