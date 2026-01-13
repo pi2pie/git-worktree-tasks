@@ -113,6 +113,7 @@ func newCreateCommand(state *runState) *cobra.Command {
 	cmd.Flags().StringVarP(&opts.path, "path", "p", "", "override worktree path (relative to repo root or absolute)")
 	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: text or raw")
 	cmd.Flags().BoolVar(&opts.copyCd, "copy-cd", false, "copy a ready-to-run cd command to the clipboard")
+	_ = cmd.Flags().MarkHidden("copy-cd")
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
 	cmd.Flags().BoolVar(&opts.skipExisting, "skip-existing", false, "reuse an existing worktree path if present")
 	cmd.Flags().BoolVar(&opts.skipExisting, "skip", false, "alias for --skip-existing")

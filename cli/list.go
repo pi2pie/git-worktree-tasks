@@ -124,6 +124,7 @@ func newListCommand(state *runState) *cobra.Command {
 
 	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: table, json, csv, or raw")
 	cmd.Flags().StringVar(&opts.task, "task", "", "filter by task name")
+	_ = cmd.Flags().MarkHidden("task")
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
 	cmd.Flags().StringVarP(&opts.field, "field", "f", "", "raw output field: path, task, or branch (default path)")
 	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
