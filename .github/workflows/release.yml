@@ -92,7 +92,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          if [[ ${RELEASE_TAG} == *-alpha* || ${RELEASE_TAG} == *-beta* || ${RELEASE_TAG} == *-rc* ]] || [[ ${RELEASE_TAG} == *-canary* ]]; then
+          if [[ ${RELEASE_TAG} == *-alpha* || ${RELEASE_TAG} == *-beta* || ${RELEASE_TAG} == *-rc* || ${RELEASE_TAG} == *-canary* ]] ; then
             echo "IS_PRERELEASE=true" >> $GITHUB_OUTPUT
           else
             echo "IS_PRERELEASE=false" >> $GITHUB_OUTPUT
