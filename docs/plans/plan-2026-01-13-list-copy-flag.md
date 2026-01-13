@@ -1,7 +1,7 @@
 ---
 title: "List copy flag"
 date: 2026-01-13
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -28,3 +28,7 @@ Define a copy-to-clipboard flag for `list`/`ls` that mirrors `create --copy-cd`,
 
 # Open Questions
 - `--field` applies only to `--output raw` and is ignored for other formats.
+
+# Completion Notes
+- Implemented `--field/-f` for `list --output raw` (path/task/branch, default path).
+- Removed `create --copy-cd` and `list --task`; updated README to prefer piping raw output.

@@ -1,7 +1,7 @@
 ---
 title: "Deprecate copy-cd and list --task"
 date: 2026-01-13
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -15,6 +15,10 @@ Deprecate redundant CLI flags: `create --copy-cd` and `list --task`.
 # Notes
 - No user-facing deprecation notice requested at this time.
 - Commit message will be added separately by the user.
+ - Deprecations were fully removed in implementation.
 
 # Related Plans
 - docs/plans/plan-2026-01-13-list-copy-flag.md
+
+# Related Jobs
+- docs/plans/jobs/2026-01-13-remove-copy-cd-and-list-task.md
