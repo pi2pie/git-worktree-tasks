@@ -18,6 +18,7 @@ type listOptions struct {
 	output string
 	task   string
 	branch string
+	field  string
 	abs    bool
 	grid   bool
 	strict bool
@@ -69,6 +70,10 @@ func newListCommand(state *runState) *cobra.Command {
 			if opts.output == "raw" && query == "" && opts.branch == "" {
 				return fmt.Errorf("raw output requires a task or branch filter")
 			}
+			field, err := normalizeListField(opts.field)
+			if err != nil {
+				return err
+			}
 
 			worktrees, err := worktree.List(ctx, runner, repoRoot)
 			if err != nil {
@@ -113,13 +118,14 @@ func newListCommand(state *runState) *cobra.Command {
 				}
 			}
 
-			return renderList(cmd, opts.output, rows, opts.grid)
+			return renderList(cmd, opts.output, field, rows, opts.grid)
 		},
 	}
 
 	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: table, json, csv, or raw")
 	cmd.Flags().StringVar(&opts.task, "task", "", "filter by task name")
 	cmd.Flags().StringVar(&opts.branch, "branch", "", "filter by branch name")
+	cmd.Flags().StringVarP(&opts.field, "field", "f", "", "raw output field: path, task, or branch (default path)")
 	cmd.Flags().BoolVar(&opts.abs, "absolute-path", false, "show absolute paths instead of relative")
 	cmd.Flags().BoolVar(&opts.abs, "abs", false, "alias for --absolute-path")
 	cmd.Flags().BoolVar(&opts.grid, "grid", false, "render table with grid borders")
@@ -128,7 +134,7 @@ func newListCommand(state *runState) *cobra.Command {
 	return cmd
 }
 
-func renderList(cmd *cobra.Command, format string, rows []listRow, grid bool) error {
+func renderList(cmd *cobra.Command, format, field string, rows []listRow, grid bool) error {
 	switch format {
 	case "table":
 		columns := []tableColumn{
@@ -184,9 +190,33 @@ func renderList(cmd *cobra.Command, format string, rows []listRow, grid bool) er
 		if len(rows) == 0 {
 			return fmt.Errorf("no matching worktrees found")
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), rows[0].Path)
+		fmt.Fprintln(cmd.OutOrStdout(), listFieldValue(rows[0], field))
 		return nil
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)
+	}
+}
+
+func normalizeListField(value string) (string, error) {
+	value = strings.TrimSpace(strings.ToLower(value))
+	if value == "" {
+		return "path", nil
+	}
+	switch value {
+	case "path", "task", "branch":
+		return value, nil
+	default:
+		return "", fmt.Errorf("unsupported field: %s (use path, task, or branch)", value)
+	}
+}
+
+func listFieldValue(row listRow, field string) string {
+	switch field {
+	case "task":
+		return row.Task
+	case "branch":
+		return row.Branch
+	default:
+		return row.Path
 	}
 }
