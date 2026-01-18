@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/dev-pi2pie/git-worktree-tasks/ui"
+	"github.com/pi2pie/git-worktree-tasks/ui"
 )
 
 func confirmPrompt(in io.Reader, out io.Writer, message string) (bool, error) {

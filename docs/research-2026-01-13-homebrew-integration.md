@@ -1,6 +1,7 @@
 ---
 title: "Homebrew integration strategies for git-worktree-tasks"
 date: 2026-01-13
+modified: 2026-01-18
 status: draft
 agent: Zed Agent
 ---
@@ -46,9 +47,9 @@ Homebrew is a popular package manager for macOS and Linux. It uses "formulas" (R
 ### Approach 2: Custom Tap Repository
 
 **Process:**
-- Create separate GitHub repository: `dev-pi2pie/homebrew-git-worktree-tasks`
+- Create separate GitHub repository: `pi2pie/homebrew-git-worktree-tasks`
 - Maintain `Formula/git-worktree-tasks.rb` in the tap repository
-- Users add tap first: `brew tap dev-pi2pie/git-worktree-tasks`
+- Users add tap first: `brew tap pi2pie/git-worktree-tasks`
 - Then install: `brew install git-worktree-tasks`
 
 **Advantages:**
@@ -76,8 +77,8 @@ Homebrew is a popular package manager for macOS and Linux. It uses "formulas" (R
 ```ruby
 class GitWorktreeTasks < Formula
   desc "Task-based git worktree helper"
-  homepage "https://github.com/dev-pi2pie/git-worktree-tasks"
-  url "https://github.com/dev-pi2pie/git-worktree-tasks/archive/refs/tags/v#{version}.tar.gz"
+  homepage "https://github.com/pi2pie/git-worktree-tasks"
+  url "https://github.com/pi2pie/git-worktree-tasks/archive/refs/tags/v#{version}.tar.gz"
   sha256 "<checksum>"
   version "<version>"
   license "MIT"
@@ -102,22 +103,22 @@ Requires goreleaser or similar CI/CD to generate platform-specific binaries.
 ```ruby
 class GitWorktreeTasks < Formula
   desc "Task-based git worktree helper"
-  homepage "https://github.com/dev-pi2pie/git-worktree-tasks"
+  homepage "https://github.com/pi2pie/git-worktree-tasks"
   version "<version>"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/dev-pi2pie/git-worktree-tasks/releases/download/v#{version}/git-worktree-tasks_#{version}_darwin_arm64.tar.gz"
+      url "https://github.com/pi2pie/git-worktree-tasks/releases/download/v#{version}/git-worktree-tasks_#{version}_darwin_arm64.tar.gz"
       sha256 "<arm64_checksum>"
     else
-      url "https://github.com/dev-pi2pie/git-worktree-tasks/releases/download/v#{version}/git-worktree-tasks_#{version}_darwin_amd64.tar.gz"
+      url "https://github.com/pi2pie/git-worktree-tasks/releases/download/v#{version}/git-worktree-tasks_#{version}_darwin_amd64.tar.gz"
       sha256 "<amd64_checksum>"
     end
   end
 
   on_linux do
-    url "https://github.com/dev-pi2pie/git-worktree-tasks/releases/download/v#{version}/git-worktree-tasks_#{version}_linux_amd64.tar.gz"
+    url "https://github.com/pi2pie/git-worktree-tasks/releases/download/v#{version}/git-worktree-tasks_#{version}_linux_amd64.tar.gz"
     sha256 "<linux_checksum>"
   end
 
@@ -137,13 +138,13 @@ end
 ### Custom Tap (Recommended for Current Stage)
 
 ```bash
-brew tap dev-pi2pie/git-worktree-tasks
+brew tap pi2pie/git-worktree-tasks
 brew install git-worktree-tasks
 ```
 
 One-liner variant:
 ```bash
-brew install dev-pi2pie/git-worktree-tasks/git-worktree-tasks
+brew install pi2pie/git-worktree-tasks/git-worktree-tasks
 ```
 
 ### Global Homebrew (Future, After Stabilization)

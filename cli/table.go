@@ -7,7 +7,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
-	"github.com/dev-pi2pie/git-worktree-tasks/ui"
+	"github.com/pi2pie/git-worktree-tasks/ui"
 	"github.com/mattn/go-runewidth"
 	"github.com/spf13/cobra"
 )

@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/dev-pi2pie/git-worktree-tasks/tui"
+	"github.com/pi2pie/git-worktree-tasks/tui"
 	"github.com/spf13/cobra"
 )
 
