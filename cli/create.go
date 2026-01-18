@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/dev-pi2pie/git-worktree-tasks/internal/git"
-	"github.com/dev-pi2pie/git-worktree-tasks/internal/worktree"
-	"github.com/dev-pi2pie/git-worktree-tasks/ui"
+	"github.com/pi2pie/git-worktree-tasks/internal/git"
+	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
+	"github.com/pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 

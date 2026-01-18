@@ -46,7 +46,7 @@ gwtt cleanup "my-feature"
 ### Option 1: Using Makefile (Recommended)
 
 ```bash
-git clone https://github.com/dev-pi2pie/git-worktree-tasks
+git clone https://github.com/pi2pie/git-worktree-tasks
 cd git-worktree-tasks
 make go-install
 ```
@@ -64,7 +64,7 @@ This installs both `git-worktree-tasks` and `gwtt` binaries to `$GOPATH/bin`.
 ### Option 3: Standard Go Install
 
 ```bash
-go install github.com/dev-pi2pie/git-worktree-tasks@latest
+go install github.com/pi2pie/git-worktree-tasks@latest
 ```
 
 > **Note:** This creates only `git-worktree-tasks`. For `gwtt`, add a shell alias (see below).
@@ -81,7 +81,14 @@ make build
 - **Go 1.25.5+** for building
 - **`$GOPATH/bin` in `$PATH`** for `go-install` targets
 
----
+
+> [!Note]
+> **Ownership Change (v0.0.7+)**
+> 
+> The repository ownership changed after v0.0.6. The old `dev-pi2pie` path no longer exists, so use the new module path for all installs and imports:
+> 
+> - **v0.0.7 and later:** `github.com/pi2pie/git-worktree-tasks`
+
 
 ## Shell Configuration
 

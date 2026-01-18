@@ -6,12 +6,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dev-pi2pie/git-worktree-tasks/internal/config"
-	"github.com/dev-pi2pie/git-worktree-tasks/ui"
+	"github.com/pi2pie/git-worktree-tasks/internal/config"
+	"github.com/pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.0.6"
+var Version = "0.0.7"
 
 var (
 	errCanceled     = errors.New("git worktree task process canceled")

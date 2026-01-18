@@ -1,4 +1,4 @@
-module github.com/dev-pi2pie/git-worktree-tasks
+module github.com/pi2pie/git-worktree-tasks
 
 go 1.25.5
 

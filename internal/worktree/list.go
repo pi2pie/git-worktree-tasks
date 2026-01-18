@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dev-pi2pie/git-worktree-tasks/internal/git"
+	"github.com/pi2pie/git-worktree-tasks/internal/git"
 )
 
 type Worktree struct {

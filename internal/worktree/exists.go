@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/dev-pi2pie/git-worktree-tasks/internal/git"
+	"github.com/pi2pie/git-worktree-tasks/internal/git"
 )
 
 func Exists(ctx context.Context, runner git.Runner, repoRoot, path string) (bool, error) {
