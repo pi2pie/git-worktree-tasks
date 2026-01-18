@@ -81,7 +81,14 @@ make build
 - **Go 1.25.5+** for building
 - **`$GOPATH/bin` in `$PATH`** for `go-install` targets
 
----
+
+> [!Note]
+> **Ownership Change (v0.0.7+)**
+> 
+> The repository ownership changed after v0.0.6. The old `dev-pi2pie` path no longer exists, so use the new module path for all installs and imports:
+> 
+> - **v0.0.7 and later:** `github.com/pi2pie/git-worktree-tasks`
+
 
 ## Shell Configuration
 
