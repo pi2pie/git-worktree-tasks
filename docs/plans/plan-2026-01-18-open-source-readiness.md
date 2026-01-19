@@ -18,6 +18,8 @@ Prepare the project for an open-source release by addressing correctness gaps, U
 - [x] Align TUI task detection with CLI repo name resolution (use git common dir logic).
 - [x] Improve `create --skip-existing` messaging to reflect the actual branch in the existing worktree.
 - [ ] Add integration tests covering create/list/status/finish/cleanup, with edge cases (no commits, detached HEAD, prunable entries).
+- [ ] Decide and document default base behavior for `create` when invoked from a non-main branch (e.g., use current branch vs `main`), ensure `--base` overrides, and cover the nested-worktree-from-worktree scenario in tests or docs.
+- [ ] Update README to document `create` base selection defaults, `--base` override behavior, and detached HEAD handling.
 - [ ] Add CI workflow for `go test ./...` and a linter.
 
 ## Rationale
@@ -30,3 +32,6 @@ Prepare the project for an open-source release by addressing correctness gaps, U
 
 ## Current Artifacts
 - LICENSE (MIT) added.
+
+## Related Research
+- docs/research-2026-01-19-create-default-base.md
