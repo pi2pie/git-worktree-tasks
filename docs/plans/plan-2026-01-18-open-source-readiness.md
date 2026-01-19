@@ -11,7 +11,7 @@ Prepare the project for an open-source release by addressing correctness gaps, U
 
 ## Proposed Work
 - [x] Add LICENSE (MIT) file.
-- [ ] Add man(1) page generation (Cobra doc) and wire it into install packaging (Makefile target).
+- [x] Add man(1) page generation (Cobra doc) and wire it into install packaging (Makefile target).
 - [ ] Revisit short commit hash behavior in `internal/worktree/status.go` to allow dynamic length (7/8/10) based on repo size; document rationale and references.
 - [ ] Harden `status` against stale/prunable worktrees and missing worktree paths.
 - [ ] Handle empty-history repositories (no commits yet) without failing `status`.

@@ -37,6 +37,11 @@ func Execute() int {
 	return 0
 }
 
+func RootCommand() *cobra.Command {
+	cmd, _ := gitWorkTreeCommand()
+	return cmd
+}
+
 type runState struct {
 	hasWarnings   bool
 	exitOnWarning bool

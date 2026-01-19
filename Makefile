@@ -1,4 +1,4 @@
-.PHONY: help build go-build go-install go-uninstall clean
+.PHONY: help build man go-build go-install go-uninstall clean
 
 # Build directory
 DIST_DIR := dist
@@ -9,6 +9,7 @@ help:
 	@echo ""
 	@echo "Local Development:"
 	@echo "  make build           Build both git-worktree-tasks and gwtt binaries to $(DIST_DIR)/"
+	@echo "  make man             Generate man(1) pages to man/man1"
 	@echo "  make clean           Remove binaries from $(DIST_DIR)/"
 	@echo ""
 	@echo "Go Developer Installation (requires Go):"
@@ -31,6 +32,14 @@ build: $(DIST_DIR)
 	@echo "✓ Built gwtt"
 	@echo ""
 	@echo "Both binaries are ready in $(DIST_DIR)/"
+
+# Generate man pages to man/man1
+.PHONY: man
+man:
+	@echo "Generating man pages..."
+	go run ./scripts/generate-man.go -out man -use git-worktree-tasks -title GIT-WORKTREE-TASKS -source git-worktree-tasks
+	go run ./scripts/generate-man.go -out man -use gwtt -title GWTT -source gwtt
+	@echo "✓ Generated man pages in man/man1"
 
 # Create dist directory if it doesn't exist
 $(DIST_DIR):
