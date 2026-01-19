@@ -1,0 +1,63 @@
+.nh
+.TH "GWTT" "1" "Jan 2026" "gwtt" "Git Worktree Tasks Manual"
+
+.SH NAME
+gwtt-list - List task worktrees
+
+
+.SH SYNOPSIS
+\fBgwtt list [task] [flags]\fP
+
+
+.SH DESCRIPTION
+List task worktrees
+
+
+.SH OPTIONS
+\fB--abs\fP[=false]
+	alias for --absolute-path
+
+.PP
+\fB--absolute-path\fP[=false]
+	show absolute paths instead of relative
+
+.PP
+\fB--branch\fP=""
+	filter by branch name
+
+.PP
+\fB-f\fP, \fB--field\fP=""
+	raw output field: path, task, or branch (default path)
+
+.PP
+\fB--grid\fP[=false]
+	render table with grid borders
+
+.PP
+\fB-h\fP, \fB--help\fP[=false]
+	help for list
+
+.PP
+\fB-o\fP, \fB--output\fP="table"
+	output format: table, json, csv, or raw
+
+.PP
+\fB--strict\fP[=false]
+	require exact task match (after trimming and slugifying)
+
+
+.SH OPTIONS INHERITED FROM PARENT COMMANDS
+\fB--nocolor\fP[=false]
+	disable color output
+
+.PP
+\fB--theme\fP="default"
+	color theme: default, dracula, gruvbox, nord, solarized
+
+.PP
+\fB--themes\fP[=false]
+	print available themes and exit
+
+
+.SH SEE ALSO
+\fBgwtt(1)\fP

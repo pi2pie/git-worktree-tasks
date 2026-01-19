@@ -1,0 +1,75 @@
+.nh
+.TH "GWTT" "1" "Jan 2026" "gwtt" "Git Worktree Tasks Manual"
+
+.SH NAME
+gwtt-finish - Merge a task branch into a target branch
+
+
+.SH SYNOPSIS
+\fBgwtt finish  [flags]\fP
+
+
+.SH DESCRIPTION
+Merge a task branch into a target branch
+
+
+.SH OPTIONS
+\fB--cleanup\fP[=false]
+	remove worktree and branch after merge
+
+.PP
+\fB--dry-run\fP[=false]
+	show git commands without executing
+
+.PP
+\fB--force-branch\fP[=false]
+	force delete branch when removing
+
+.PP
+\fB-h\fP, \fB--help\fP[=false]
+	help for finish
+
+.PP
+\fB--no-ff\fP[=false]
+	use --no-ff merge
+
+.PP
+\fB--rebase\fP[=false]
+	rebase task branch onto target before merging
+
+.PP
+\fB--remove-branch\fP[=false]
+	remove the task branch after merge
+
+.PP
+\fB--remove-worktree\fP[=false]
+	remove the task worktree after merge
+
+.PP
+\fB--squash\fP[=false]
+	use --squash merge
+
+.PP
+\fB--target\fP=""
+	target branch (default: current)
+
+.PP
+\fB--yes\fP[=false]
+	skip confirmation prompts
+
+
+.SH OPTIONS INHERITED FROM PARENT COMMANDS
+\fB--nocolor\fP[=false]
+	disable color output
+
+.PP
+\fB--theme\fP="default"
+	color theme: default, dracula, gruvbox, nord, solarized
+
+.PP
+\fB--themes\fP[=false]
+	print available themes and exit
+
+
+.SH SEE ALSO
+\fBgwtt(1)\fP

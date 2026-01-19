@@ -1,0 +1,59 @@
+.nh
+.TH "GIT-WORKTREE-TASKS" "1" "Jan 2026" "git-worktree-tasks" "Git Worktree Tasks Manual"
+
+.SH NAME
+git-worktree-tasks-create - Create a worktree and branch for a task
+
+
+.SH SYNOPSIS
+\fBgit-worktree-tasks create  [flags]\fP
+
+
+.SH DESCRIPTION
+Create a worktree and branch for a task
+
+
+.SH OPTIONS
+\fB--base\fP="main"
+	base branch to create from
+
+.PP
+\fB--dry-run\fP[=false]
+	show git commands without executing
+
+.PP
+\fB-h\fP, \fB--help\fP[=false]
+	help for create
+
+.PP
+\fB-o\fP, \fB--output\fP="text"
+	output format: text or raw
+
+.PP
+\fB-p\fP, \fB--path\fP=""
+	override worktree path (relative to repo root or absolute)
+
+.PP
+\fB--skip\fP[=false]
+	alias for --skip-existing
+
+.PP
+\fB--skip-existing\fP[=false]
+	reuse an existing worktree path if present
+
+
+.SH OPTIONS INHERITED FROM PARENT COMMANDS
+\fB--nocolor\fP[=false]
+	disable color output
+
+.PP
+\fB--theme\fP="default"
+	color theme: default, dracula, gruvbox, nord, solarized
+
+.PP
+\fB--themes\fP[=false]
+	print available themes and exit
+
+
+.SH SEE ALSO
+\fBgit-worktree-tasks(1)\fP

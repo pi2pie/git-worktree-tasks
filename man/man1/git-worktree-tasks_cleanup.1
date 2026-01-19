@@ -1,0 +1,59 @@
+.nh
+.TH "GIT-WORKTREE-TASKS" "1" "Jan 2026" "git-worktree-tasks" "Git Worktree Tasks Manual"
+
+.SH NAME
+git-worktree-tasks-cleanup - Remove a task worktree and/or branch
+
+
+.SH SYNOPSIS
+\fBgit-worktree-tasks cleanup  [flags]\fP
+
+
+.SH DESCRIPTION
+Remove a task worktree and/or branch
+
+
+.SH OPTIONS
+\fB--dry-run\fP[=false]
+	show git commands without executing
+
+.PP
+\fB--force-branch\fP[=false]
+	force delete branch when removing
+
+.PP
+\fB-h\fP, \fB--help\fP[=false]
+	help for cleanup
+
+.PP
+\fB--remove-branch\fP[=true]
+	remove the task branch
+
+.PP
+\fB--remove-worktree\fP[=true]
+	remove the task worktree
+
+.PP
+\fB--worktree-only\fP[=false]
+	remove only the task worktree (keep branch)
+
+.PP
+\fB--yes\fP[=false]
+	skip confirmation prompts
+
+
+.SH OPTIONS INHERITED FROM PARENT COMMANDS
+\fB--nocolor\fP[=false]
+	disable color output
+
+.PP
+\fB--theme\fP="default"
+	color theme: default, dracula, gruvbox, nord, solarized
+
+.PP
+\fB--themes\fP[=false]
+	print available themes and exit
+
+
+.SH SEE ALSO
+\fBgit-worktree-tasks(1)\fP
