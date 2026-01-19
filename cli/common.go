@@ -18,26 +18,6 @@ func repoRoot(ctx context.Context, runner git.Runner) (string, error) {
 	return git.RepoRoot(ctx, runner)
 }
 
-// func repoName(root string) string {
-// 	return filepath.Base(root)
-// }
-
-func repoBaseName(ctx context.Context, runner git.Runner) (string, error) {
-	root, err := repoRoot(ctx, runner)
-	if err != nil {
-		return "", err
-	}
-	commonDir, err := git.CommonDir(ctx, runner)
-	if err != nil {
-		return "", err
-	}
-	if !filepath.IsAbs(commonDir) {
-		commonDir = filepath.Join(root, commonDir)
-	}
-	commonDir = filepath.Clean(commonDir)
-	return filepath.Base(filepath.Dir(commonDir)), nil
-}
-
 func displayPath(repoRoot, path string, absolute bool) string {
 	clean := filepath.Clean(path)
 	absPath := clean

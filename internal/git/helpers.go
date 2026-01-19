@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
 var (
-	ErrNotRepo  = errors.New("not a git repository (run inside a git repository)")
+	ErrNotRepo   = errors.New("not a git repository (run inside a git repository)")
 	ErrNoCommits = errors.New("no commits yet (empty history)")
 )
 
@@ -32,6 +33,22 @@ func CommonDir(ctx context.Context, runner Runner) (string, error) {
 		return "", fmt.Errorf("git common dir: %w: %s", err, stderr)
 	}
 	return strings.TrimSpace(stdout), nil
+}
+
+func RepoBaseName(ctx context.Context, runner Runner) (string, error) {
+	root, err := RepoRoot(ctx, runner)
+	if err != nil {
+		return "", err
+	}
+	commonDir, err := CommonDir(ctx, runner)
+	if err != nil {
+		return "", err
+	}
+	if !filepath.IsAbs(commonDir) {
+		commonDir = filepath.Join(root, commonDir)
+	}
+	commonDir = filepath.Clean(commonDir)
+	return filepath.Base(filepath.Dir(commonDir)), nil
 }
 
 func CurrentBranch(ctx context.Context, runner Runner) (string, error) {

@@ -37,7 +37,7 @@ func newFinishCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			repo, err := repoBaseName(ctx, runner)
+			repo, err := git.RepoBaseName(ctx, runner)
 			if err != nil {
 				return err
 			}

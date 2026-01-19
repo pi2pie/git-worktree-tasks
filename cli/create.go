@@ -37,7 +37,7 @@ func newCreateCommand() *cobra.Command {
 			if _, err := git.CurrentBranch(ctx, runner); err != nil {
 				return err
 			}
-			repo, err := repoBaseName(ctx, runner)
+			repo, err := git.RepoBaseName(ctx, runner)
 			if err != nil {
 				return err
 			}

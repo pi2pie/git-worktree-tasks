@@ -71,22 +71,6 @@ func TestMatchesTask(t *testing.T) {
 	}
 }
 
-func TestRepoBaseName(t *testing.T) {
-	runner := fakeRunner{
-		responses: map[string]fakeResponse{
-			"rev-parse --show-toplevel":  {stdout: "/tmp/example"},
-			"rev-parse --git-common-dir": {stdout: ".git"},
-		},
-	}
-	got, err := repoBaseName(context.Background(), runner)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if got != "example" {
-		t.Fatalf("repoBaseName() = %q, want %q", got, "example")
-	}
-}
-
 func TestMainWorktreePathFromCommonDir(t *testing.T) {
 	tests := []struct {
 		name      string

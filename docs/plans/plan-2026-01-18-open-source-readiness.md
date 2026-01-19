@@ -15,7 +15,7 @@ Prepare the project for an open-source release by addressing correctness gaps, U
 - [x] Revisit short commit hash behavior in `internal/worktree/status.go` to allow dynamic length (7/8/10) based on repo size; document rationale and references.
 - [x] Harden `status` against stale/prunable worktrees and missing worktree paths.
 - [x] Handle empty-history repositories (no commits yet) without failing `status`.
-- [ ] Align TUI task detection with CLI repo name resolution (use git common dir logic).
+- [x] Align TUI task detection with CLI repo name resolution (use git common dir logic).
 - [ ] Improve `create --skip-existing` messaging to reflect the actual branch in the existing worktree.
 - [ ] Add integration tests covering create/list/status/finish/cleanup, with edge cases (no commits, detached HEAD, prunable entries).
 - [ ] Add CI workflow for `go test ./...` and a linter.

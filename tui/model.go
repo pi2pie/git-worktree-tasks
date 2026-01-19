@@ -108,7 +108,10 @@ func loadRowsCmd() tea.Cmd {
 		if err != nil {
 			return errMsg{err: err}
 		}
-		repo := repoName(repoRoot)
+		repo, err := git.RepoBaseName(ctx, runner)
+		if err != nil {
+			return errMsg{err: err}
+		}
 		worktrees, err := worktree.List(ctx, runner, repoRoot)
 		if err != nil {
 			return errMsg{err: err}
@@ -284,10 +287,6 @@ func tableHeight(height int) int {
 		return 6
 	}
 	return height
-}
-
-func repoName(root string) string {
-	return filepath.Base(root)
 }
 
 func displayPath(repoRoot, path string) string {
