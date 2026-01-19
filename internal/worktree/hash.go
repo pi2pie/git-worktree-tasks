@@ -17,6 +17,9 @@ const shortHashDefaultLen = 7
 func ShortHashLength(ctx context.Context, runner git.Runner, repoPath string) (int, error) {
 	stdout, stderr, err := runner.Run(ctx, "-C", repoPath, "rev-parse", "--short", "HEAD")
 	if err != nil {
+		if isNoCommitsError(stderr) {
+			return shortHashDefaultLen, nil
+		}
 		if stderr != "" {
 			return shortHashDefaultLen, fmt.Errorf("short hash length: %w: %s", err, stderr)
 		}
@@ -37,4 +40,9 @@ func ShortHash(hash string, length int) string {
 		return hash
 	}
 	return hash[:length]
+}
+
+func isNoCommitsError(stderr string) bool {
+	lower := strings.ToLower(stderr)
+	return strings.Contains(lower, "unknown revision") || strings.Contains(lower, "needed a single revision")
 }

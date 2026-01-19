@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/pi2pie/git-worktree-tasks/internal/git"
 	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
 	"github.com/pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
@@ -47,6 +48,9 @@ func newListCommand() *cobra.Command {
 			}
 			repo, err := repoBaseName(ctx, runner)
 			if err != nil {
+				return err
+			}
+			if _, err := git.CurrentBranch(ctx, runner); err != nil {
 				return err
 			}
 			var query string
