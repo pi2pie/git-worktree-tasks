@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
 	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
@@ -53,9 +54,37 @@ func newCleanupCommand() *cobra.Command {
 				return fmt.Errorf("nothing to clean: enable --remove-worktree and/or --remove-branch")
 			}
 
-			worktreeExists, err := worktree.Exists(ctx, runner, repoRoot, path)
+			worktrees, err := worktree.List(ctx, runner, repoRoot)
 			if err != nil {
 				return err
+			}
+
+			resolvedPath := path
+			worktreeExists := false
+			branchRef := "refs/heads/" + branch
+			for _, wt := range worktrees {
+				if wt.Branch == branchRef {
+					resolvedPath = wt.Path
+					worktreeExists = true
+					break
+				}
+			}
+
+			if !worktreeExists {
+				targetPath, err := normalizeCleanupPath(repoRoot, path)
+				if err != nil {
+					return err
+				}
+				for _, wt := range worktrees {
+					wtPath, err := normalizeCleanupPath(repoRoot, wt.Path)
+					if err != nil {
+						return err
+					}
+					if wtPath == targetPath {
+						worktreeExists = true
+						break
+					}
+				}
 			}
 
 			branchExists := false
@@ -94,7 +123,7 @@ func newCleanupCommand() *cobra.Command {
 						return errCanceled
 					}
 				}
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", path); err != nil {
+				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", resolvedPath); err != nil {
 					return err
 				}
 				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "prune"); err != nil {
@@ -146,4 +175,15 @@ func newCleanupCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
 
 	return cmd
+}
+
+func normalizeCleanupPath(repoRoot, path string) (string, error) {
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(repoRoot, path)
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("normalize path: %w", err)
+	}
+	return filepath.Clean(absPath), nil
 }
