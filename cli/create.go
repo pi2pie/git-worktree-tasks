@@ -22,7 +22,7 @@ type createOptions struct {
 }
 
 func newCreateCommand() *cobra.Command {
-	opts := &createOptions{base: "main", output: "text"}
+	opts := &createOptions{output: "text"}
 	cmd := &cobra.Command{
 		Use:   "create <task>",
 		Short: "Create a worktree and branch for a task",
@@ -35,7 +35,12 @@ func newCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if _, err := git.CurrentBranch(ctx, runner); err != nil {
+			currentBranch, err := git.CurrentBranchAt(ctx, runner, repoRoot)
+			if err != nil {
+				return err
+			}
+			base, err := resolveCreateBase(currentBranch, opts.base)
+			if err != nil {
 				return err
 			}
 			repo, err := git.RepoBaseName(ctx, runner)
@@ -72,7 +77,7 @@ func newCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			gitArgs := buildCreateWorktreeArgs(repoRoot, path, branch, opts.base, branchExists)
+			gitArgs := buildCreateWorktreeArgs(repoRoot, path, branch, base, branchExists)
 			if opts.dryRun {
 				fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(gitArgs))
 				return nil
@@ -103,7 +108,7 @@ func newCreateCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.base, "base", opts.base, "base branch to create from")
+	cmd.Flags().StringVar(&opts.base, "base", opts.base, "base branch to create from (default: current branch)")
 	cmd.Flags().StringVarP(&opts.path, "path", "p", "", "override worktree path (relative to repo root or absolute)")
 	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: text or raw")
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
@@ -115,6 +120,16 @@ func newCreateCommand() *cobra.Command {
 
 func stringSlice(args []string) string {
 	return fmt.Sprintf("%s", args)
+}
+
+func resolveCreateBase(currentBranch, override string) (string, error) {
+	if override != "" {
+		return override, nil
+	}
+	if currentBranch == "HEAD" {
+		return "", fmt.Errorf("detached HEAD: specify --base to create from a branch")
+	}
+	return currentBranch, nil
 }
 
 func worktreePathOverride(repoRoot, path string) string {
