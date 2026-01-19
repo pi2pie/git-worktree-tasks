@@ -2,7 +2,7 @@
 title: "Open-source readiness improvements"
 date: 2026-01-18
 modified-date: 2026-01-19
-status: draft
+status: active
 agent: Codex
 ---
 
