@@ -8,8 +8,8 @@ A small CLI to manage task-based Git worktrees with predictable naming and clean
 # Install (requires Go 1.25.5+)
 make go-install
 
-# Create a task worktree
-gwtt create "my-feature" --base main
+# Create a task worktree (defaults to current branch)
+gwtt create "my-feature"
 
 # List all worktrees
 gwtt list
@@ -152,7 +152,10 @@ name = "nord"
 ### Creating Worktrees
 
 ```bash
-# Basic usage
+# Basic usage (defaults to current branch)
+gwtt create "my-task"
+
+# Explicit base override
 gwtt create "my-task" --base main
 
 # Reuse existing worktree (no error if exists)
@@ -168,11 +171,15 @@ gwtt create "my-task" --dry-run
 **Flags:**
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--base` | | Base branch to create from (default: `main`) |
+| `--base` | | Base branch to create from (default: current branch) |
 | `--path` | `-p` | Override worktree path |
 | `--output` | `-o` | Output format: `text`, `raw` |
 | `--skip-existing` | `--skip` | Reuse existing worktree |
 | `--dry-run` | | Show git commands without executing |
+
+**Notes:**
+- The default base is the current local branch (for example `main`, `master`, or `dev`).
+- If you are in a detached HEAD state, you must pass `--base` explicitly.
 
 ### Listing Worktrees
 
@@ -331,7 +338,7 @@ When using `--output raw` with `list`, specify which field to output:
 cd "$(gwtt list my-task -o raw)"
 
 # Or using create
-cd "$(gwtt create my-task --base main -o raw)"
+cd "$(gwtt create my-task -o raw)"
 ```
 
 #### Copy to clipboard
@@ -354,6 +361,9 @@ gwtt list my-task -o raw -f branch | pbcopy
 # Open worktree in VS Code
 code "$(gwtt list my-task -o raw)"
 
+# Open Worktree in Zed
+zed "$(gwtt list my-task -o raw)"
+
 # Open in Cursor
 cursor "$(gwtt list my-task -o raw)"
 ```
@@ -362,7 +372,7 @@ cursor "$(gwtt list my-task -o raw)"
 
 ```bash
 # Create and open in one command
-code "$(gwtt create my-feature --base main -o raw)"
+code "$(gwtt create my-feature -o raw)"
 
 # List all branches as plain text
 gwtt list -o json | jq -r '.[].branch'
@@ -382,14 +392,14 @@ gwtt status -o json | jq '[.[] | select(.ahead > 0)] | length'
 ```bash
 # Fish: Create and cd to worktree
 function gwtt-new
-    set path (gwtt create $argv[1] --base main -o raw)
+    set path (gwtt create $argv[1] -o raw)
     and cd $path
 end
 
 # Bash/Zsh: Create and cd to worktree
 gwtt-new() {
     local path
-    path=$(gwtt create "$1" --base main -o raw) && cd "$path"
+    path=$(gwtt create "$1" -o raw) && cd "$path"
 }
 ```
 
@@ -416,6 +426,13 @@ make go-install   # Install to $GOPATH/bin
 make go-uninstall # Remove installed binaries
 make clean        # Remove dist/
 make help         # Show all targets
+```
+
+### Testing and Linting
+
+```bash
+go test ./...
+golangci-lint run
 ```
 
 ### Project Structure

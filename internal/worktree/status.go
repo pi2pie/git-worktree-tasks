@@ -57,7 +57,7 @@ func Status(ctx context.Context, runner git.Runner, path string, target string) 
 		info.LastCommit = formatCommitLine(stdout, shortHashLen)
 
 		if target != "" {
-			stdout, stderr, err = runner.Run(ctx, "-C", path, "merge-base", "HEAD", target)
+			stdout, _, err = runner.Run(ctx, "-C", path, "merge-base", "HEAD", target)
 			if err == nil {
 				info.Base = ShortHash(strings.TrimSpace(stdout), shortHashLen)
 			}

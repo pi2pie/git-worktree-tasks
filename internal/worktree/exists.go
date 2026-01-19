@@ -13,12 +13,12 @@ func Exists(ctx context.Context, runner git.Runner, repoRoot, path string) (bool
 	if err != nil {
 		return false, err
 	}
-	targetPath, err := normalizePath(repoRoot, path)
+	targetPath, err := NormalizePath(repoRoot, path)
 	if err != nil {
 		return false, err
 	}
 	for _, wt := range worktrees {
-		wtPath, err := normalizePath(repoRoot, wt.Path)
+		wtPath, err := NormalizePath(repoRoot, wt.Path)
 		if err != nil {
 			return false, err
 		}
@@ -29,7 +29,31 @@ func Exists(ctx context.Context, runner git.Runner, repoRoot, path string) (bool
 	return false, nil
 }
 
-func normalizePath(repoRoot, path string) (string, error) {
+func LookupByPath(ctx context.Context, runner git.Runner, repoRoot, path string) (*Worktree, bool, error) {
+	worktrees, err := List(ctx, runner, repoRoot)
+	if err != nil {
+		return nil, false, err
+	}
+	targetPath, err := NormalizePath(repoRoot, path)
+	if err != nil {
+		return nil, false, err
+	}
+	for _, wt := range worktrees {
+		wtPath, err := NormalizePath(repoRoot, wt.Path)
+		if err != nil {
+			return nil, false, err
+		}
+		if wtPath == targetPath {
+			found := wt
+			return &found, true, nil
+		}
+	}
+	return nil, false, nil
+}
+
+// NormalizePath converts a potentially relative path to an absolute, cleaned path.
+// If path is not absolute, it is joined with repoRoot first.
+func NormalizePath(repoRoot, path string) (string, error) {
 	if !filepath.IsAbs(path) {
 		path = filepath.Join(repoRoot, path)
 	}

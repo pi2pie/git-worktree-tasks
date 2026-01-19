@@ -36,7 +36,7 @@ func newCleanupCommand() *cobra.Command {
 			if _, err := git.CurrentBranch(ctx, runner); err != nil {
 				return err
 			}
-			repo, err := repoBaseName(ctx, runner)
+			repo, err := git.RepoBaseName(ctx, runner)
 			if err != nil {
 				return err
 			}
@@ -53,9 +53,49 @@ func newCleanupCommand() *cobra.Command {
 				return fmt.Errorf("nothing to clean: enable --remove-worktree and/or --remove-branch")
 			}
 
-			worktreeExists, err := worktree.Exists(ctx, runner, repoRoot, path)
+			worktrees, err := worktree.List(ctx, runner, repoRoot)
 			if err != nil {
 				return err
+			}
+
+			resolvedPath := path
+			worktreeExists := false
+			branchRef := "refs/heads/" + branch
+			repoRootPath, err := worktree.NormalizePath(repoRoot, repoRoot)
+			if err != nil {
+				return err
+			}
+			for _, wt := range worktrees {
+				if wt.Branch != branchRef {
+					continue
+				}
+				wtPath, err := worktree.NormalizePath(repoRoot, wt.Path)
+				if err != nil {
+					return err
+				}
+				if wtPath == repoRootPath {
+					continue
+				}
+				resolvedPath = wt.Path
+				worktreeExists = true
+				break
+			}
+
+			if !worktreeExists {
+				targetPath, err := worktree.NormalizePath(repoRoot, path)
+				if err != nil {
+					return err
+				}
+				for _, wt := range worktrees {
+					wtPath, err := worktree.NormalizePath(repoRoot, wt.Path)
+					if err != nil {
+						return err
+					}
+					if wtPath == targetPath {
+						worktreeExists = true
+						break
+					}
+				}
 			}
 
 			branchExists := false
@@ -69,18 +109,24 @@ func newCleanupCommand() *cobra.Command {
 			if opts.removeWorktree && !worktreeExists {
 				if opts.removeBranch {
 					if branchExists {
-						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
 							ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q; branch %q exists", task, branch)),
-						)
+						); err != nil {
+							return err
+						}
 					} else {
-						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
 							ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q; no branch %q", task, branch)),
-						)
+						); err != nil {
+							return err
+						}
 					}
 				} else {
-					fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
 						ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q", task)),
-					)
+					); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -94,7 +140,7 @@ func newCleanupCommand() *cobra.Command {
 						return errCanceled
 					}
 				}
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", path); err != nil {
+				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", resolvedPath); err != nil {
 					return err
 				}
 				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "prune"); err != nil {
@@ -104,10 +150,12 @@ func newCleanupCommand() *cobra.Command {
 
 			if opts.removeBranch {
 				if !branchExists {
-					if !(opts.removeWorktree && !worktreeExists) {
-						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+					if !opts.removeWorktree || worktreeExists {
+						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
 							ui.WarningStyle.Render(fmt.Sprintf("no branch %q to remove", branch)),
-						)
+						); err != nil {
+							return err
+						}
 					}
 				} else {
 					if !opts.yes {
@@ -133,7 +181,9 @@ func newCleanupCommand() *cobra.Command {
 				}
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("cleanup complete"))
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("cleanup complete")); err != nil {
+				return err
+			}
 			return nil
 		},
 	}

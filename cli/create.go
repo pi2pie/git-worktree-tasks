@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
 	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
@@ -21,7 +22,7 @@ type createOptions struct {
 }
 
 func newCreateCommand() *cobra.Command {
-	opts := &createOptions{base: "main", output: "text"}
+	opts := &createOptions{output: "text"}
 	cmd := &cobra.Command{
 		Use:   "create <task>",
 		Short: "Create a worktree and branch for a task",
@@ -34,10 +35,15 @@ func newCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if _, err := git.CurrentBranch(ctx, runner); err != nil {
+			currentBranch, err := git.CurrentBranchAt(ctx, runner, repoRoot)
+			if err != nil {
 				return err
 			}
-			repo, err := repoBaseName(ctx, runner)
+			base, err := resolveCreateBase(currentBranch, opts.base)
+			if err != nil {
+				return err
+			}
+			repo, err := git.RepoBaseName(ctx, runner)
 			if err != nil {
 				return err
 			}
@@ -53,7 +59,11 @@ func newCreateCommand() *cobra.Command {
 			}
 			if worktreeExists {
 				if opts.skipExisting {
-					return handleExistingWorktree(cmd, repoRoot, path, task, opts)
+					branch, err := existingWorktreeBranch(ctx, runner, repoRoot, path, task)
+					if err != nil {
+						return err
+					}
+					return handleExistingWorktree(cmd, repoRoot, path, branch, opts)
 				}
 				return fmt.Errorf("worktree path already occupied: %s", displayPath(repoRoot, path, false))
 			}
@@ -67,9 +77,11 @@ func newCreateCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			gitArgs := buildCreateWorktreeArgs(repoRoot, path, branch, opts.base, branchExists)
+			gitArgs := buildCreateWorktreeArgs(repoRoot, path, branch, base, branchExists)
 			if opts.dryRun {
-				fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(gitArgs))
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(gitArgs)); err != nil {
+					return err
+				}
 				return nil
 			}
 
@@ -84,13 +96,17 @@ func newCreateCommand() *cobra.Command {
 			display := displayPath(repoRoot, path, false)
 			switch opts.output {
 			case "text":
-				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
 					ui.SuccessStyle.Render("worktree ready"),
 					ui.AccentStyle.Render(display),
 					ui.AccentStyle.Render(branch),
-				)
+				); err != nil {
+					return err
+				}
 			case "raw":
-				fmt.Fprintln(cmd.OutOrStdout(), display)
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), display); err != nil {
+					return err
+				}
 			default:
 				return fmt.Errorf("unsupported output format: %s", opts.output)
 			}
@@ -98,7 +114,7 @@ func newCreateCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.base, "base", opts.base, "base branch to create from")
+	cmd.Flags().StringVar(&opts.base, "base", opts.base, "base branch to create from (default: current branch)")
 	cmd.Flags().StringVarP(&opts.path, "path", "p", "", "override worktree path (relative to repo root or absolute)")
 	cmd.Flags().StringVarP(&opts.output, "output", "o", opts.output, "output format: text or raw")
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
@@ -112,6 +128,16 @@ func stringSlice(args []string) string {
 	return fmt.Sprintf("%s", args)
 }
 
+func resolveCreateBase(currentBranch, override string) (string, error) {
+	if override != "" {
+		return override, nil
+	}
+	if currentBranch == "HEAD" {
+		return "", fmt.Errorf("detached HEAD: specify --base to create from a branch")
+	}
+	return currentBranch, nil
+}
+
 func worktreePathOverride(repoRoot, path string) string {
 	if filepath.IsAbs(path) {
 		return path
@@ -119,17 +145,35 @@ func worktreePathOverride(repoRoot, path string) string {
 	return filepath.Join(repoRoot, path)
 }
 
-func handleExistingWorktree(cmd *cobra.Command, repoRoot, path, task string, opts *createOptions) error {
+func existingWorktreeBranch(ctx context.Context, runner git.Runner, repoRoot, path, fallback string) (string, error) {
+	wt, ok, err := worktree.LookupByPath(ctx, runner, repoRoot, path)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return fallback, nil
+	}
+	if wt.Branch != "" {
+		return strings.TrimPrefix(wt.Branch, "refs/heads/"), nil
+	}
+	return "detached", nil
+}
+
+func handleExistingWorktree(cmd *cobra.Command, repoRoot, path, branch string, opts *createOptions) error {
 	display := displayPath(repoRoot, path, false)
 	switch opts.output {
 	case "text":
-		fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
 			ui.WarningStyle.Render("worktree exists"),
 			ui.AccentStyle.Render(display),
-			ui.AccentStyle.Render(task),
-		)
+			ui.AccentStyle.Render(branch),
+		); err != nil {
+			return err
+		}
 	case "raw":
-		fmt.Fprintln(cmd.OutOrStdout(), display)
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), display); err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unsupported output format: %s", opts.output)
 	}

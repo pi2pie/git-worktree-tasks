@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -50,7 +51,7 @@ func newStatusCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			repo, err := repoBaseName(ctx, runner)
+			repo, err := git.RepoBaseName(ctx, runner)
 			if err != nil {
 				return err
 			}
@@ -76,7 +77,12 @@ func newStatusCommand() *cobra.Command {
 			if target == "" {
 				current, err := git.CurrentBranch(ctx, runner)
 				if err != nil {
-					return err
+					if errors.Is(err, git.ErrNoCommits) {
+						current, err = git.SymbolicRefShort(ctx, runner, "HEAD")
+					}
+					if err != nil {
+						return err
+					}
 				}
 				target = current
 			}
@@ -216,7 +222,9 @@ func renderStatus(cmd *cobra.Command, format string, rows []statusRow, grid bool
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), string(payload))
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), string(payload)); err != nil {
+			return err
+		}
 		return nil
 	case "csv":
 		writer := csv.NewWriter(cmd.OutOrStdout())
