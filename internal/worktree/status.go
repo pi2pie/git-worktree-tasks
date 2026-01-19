@@ -74,13 +74,11 @@ func Status(ctx context.Context, runner git.Runner, path string, target string) 
 				info.Ahead = ahead
 			}
 		}
-	}
-	if !hasHead {
+	} else {
 		info.LastCommit = "empty history"
 		if target != "" {
 			info.Base = "empty history"
 		}
-		return info, nil
 	}
 
 	return info, nil
