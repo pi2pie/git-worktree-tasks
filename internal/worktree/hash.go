@@ -3,39 +3,30 @@ package worktree
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
 )
 
-const (
-	shortHashDefaultLen = 7
-	shortHashMediumLen  = 8
-	shortHashLargeLen   = 10
+const shortHashDefaultLen = 7
 
-	// Thresholds are commit counts for 7/8/10 character abbreviations.
-	shortHashMediumThreshold = 100000
-	shortHashLargeThreshold  = 1000000
-)
-
-// ShortHashLength returns a dynamic short-hash length based on repository size.
-// Rationale: abbreviated object names must remain unambiguous; larger repositories
-// benefit from longer abbreviations. We approximate repo size using the commit
-// count and use 7/8/10 as coarse steps. References: gitrevisions(7), git-rev-parse(1).
+// ShortHashLength returns the short-hash length Git would use for this repository.
+// It queries Git directly via `rev-parse --short HEAD` to get the actual abbreviated
+// length Git computes based on core.abbrev (auto by default). This respects both
+// user configuration and Git's collision-avoidance algorithm.
 func ShortHashLength(ctx context.Context, runner git.Runner, repoPath string) (int, error) {
-	stdout, stderr, err := runner.Run(ctx, "-C", repoPath, "rev-list", "--count", "--all")
+	stdout, stderr, err := runner.Run(ctx, "-C", repoPath, "rev-parse", "--short", "HEAD")
 	if err != nil {
 		if stderr != "" {
 			return shortHashDefaultLen, fmt.Errorf("short hash length: %w: %s", err, stderr)
 		}
 		return shortHashDefaultLen, fmt.Errorf("short hash length: %w", err)
 	}
-	count, err := strconv.Atoi(strings.TrimSpace(stdout))
-	if err != nil {
-		return shortHashDefaultLen, fmt.Errorf("short hash length: %w", err)
+	shortHash := strings.TrimSpace(stdout)
+	if len(shortHash) == 0 {
+		return shortHashDefaultLen, nil
 	}
-	return shortHashLengthForCommitCount(count), nil
+	return len(shortHash), nil
 }
 
 func ShortHash(hash string, length int) string {
@@ -46,15 +37,4 @@ func ShortHash(hash string, length int) string {
 		return hash
 	}
 	return hash[:length]
-}
-
-func shortHashLengthForCommitCount(count int) int {
-	switch {
-	case count <= shortHashMediumThreshold:
-		return shortHashDefaultLen
-	case count <= shortHashLargeThreshold:
-		return shortHashMediumLen
-	default:
-		return shortHashLargeLen
-	}
 }
