@@ -107,7 +107,8 @@ if ls "$MAN_SOURCE_DIR"/*.1 &> /dev/null; then
 else
     MAN_BUILD_DIR=$(mktemp -d)
     trap 'rm -rf "$MAN_BUILD_DIR"' EXIT
-    if go run ./scripts/generate-man.go -out "$MAN_BUILD_DIR"; then
+    if go run ./scripts/generate-man.go -out "$MAN_BUILD_DIR" -use git-worktree-tasks -title GIT-WORKTREE-TASKS -source git-worktree-tasks \
+        && go run ./scripts/generate-man.go -out "$MAN_BUILD_DIR" -use gwtt -title GWTT -source gwtt; then
         cp "$MAN_BUILD_DIR/man1/"*.1 "$MAN_INSTALL_DIR/"
         echo -e "  ${GREEN}✓${NC} Generated and installed man pages"
     else
