@@ -52,17 +52,17 @@ func renderTable(cmd *cobra.Command, columns []tableColumn, rows [][]string, gri
 	widths = fitWidths(terminalWidth, columns, widths, grid)
 
 	if grid {
-		fmt.Fprintln(cmd.OutOrStdout(), formatTableDivider(widths))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), formatTableDivider(widths))
 	}
-	fmt.Fprintln(cmd.OutOrStdout(), formatTableRow(columns, widths, headers(columns), true, grid))
+	_, _ = fmt.Fprintln(cmd.OutOrStdout(), formatTableRow(columns, widths, headers(columns), true, grid))
 	if grid {
-		fmt.Fprintln(cmd.OutOrStdout(), formatTableDivider(widths))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), formatTableDivider(widths))
 	}
 	for _, row := range rows {
-		fmt.Fprintln(cmd.OutOrStdout(), formatTableRow(columns, widths, row, false, grid))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), formatTableRow(columns, widths, row, false, grid))
 	}
 	if grid {
-		fmt.Fprintln(cmd.OutOrStdout(), formatTableDivider(widths))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), formatTableDivider(widths))
 	}
 }
 

@@ -79,7 +79,9 @@ func newCreateCommand() *cobra.Command {
 			}
 			gitArgs := buildCreateWorktreeArgs(repoRoot, path, branch, base, branchExists)
 			if opts.dryRun {
-				fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(gitArgs))
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(gitArgs)); err != nil {
+					return err
+				}
 				return nil
 			}
 
@@ -94,13 +96,17 @@ func newCreateCommand() *cobra.Command {
 			display := displayPath(repoRoot, path, false)
 			switch opts.output {
 			case "text":
-				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
 					ui.SuccessStyle.Render("worktree ready"),
 					ui.AccentStyle.Render(display),
 					ui.AccentStyle.Render(branch),
-				)
+				); err != nil {
+					return err
+				}
 			case "raw":
-				fmt.Fprintln(cmd.OutOrStdout(), display)
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), display); err != nil {
+					return err
+				}
 			default:
 				return fmt.Errorf("unsupported output format: %s", opts.output)
 			}
@@ -157,13 +163,17 @@ func handleExistingWorktree(cmd *cobra.Command, repoRoot, path, branch string, o
 	display := displayPath(repoRoot, path, false)
 	switch opts.output {
 	case "text":
-		fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
 			ui.WarningStyle.Render("worktree exists"),
 			ui.AccentStyle.Render(display),
 			ui.AccentStyle.Render(branch),
-		)
+		); err != nil {
+			return err
+		}
 	case "raw":
-		fmt.Fprintln(cmd.OutOrStdout(), display)
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), display); err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unsupported output format: %s", opts.output)
 	}

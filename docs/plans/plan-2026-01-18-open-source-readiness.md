@@ -17,10 +17,10 @@ Prepare the project for an open-source release by addressing correctness gaps, U
 - [x] Handle empty-history repositories (no commits yet) without failing `status`.
 - [x] Align TUI task detection with CLI repo name resolution (use git common dir logic).
 - [x] Improve `create --skip-existing` messaging to reflect the actual branch in the existing worktree.
-- [ ] Add integration tests covering create/list/status/finish/cleanup, with edge cases (no commits, detached HEAD, prunable entries).
+- [x] Add integration tests covering create/list/status/finish/cleanup, with edge cases (no commits, detached HEAD, prunable entries).
 - [x] Decide and document default base behavior for `create` when invoked from a non-main branch (e.g., use current branch vs `main`), ensure `--base` overrides, and cover the nested-worktree-from-worktree scenario in tests or docs.
 - [x] Update README to document `create` base selection defaults, `--base` override behavior, and detached HEAD handling.
-- [ ] Add CI workflow for `go test ./...` and a linter.
+- [x] Add CI workflow for `go test ./...` and a linter.
 
 ## Rationale
 - Open-source release requires clear licensing.

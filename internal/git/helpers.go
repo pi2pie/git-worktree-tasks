@@ -62,6 +62,17 @@ func CurrentBranch(ctx context.Context, runner Runner) (string, error) {
 	return strings.TrimSpace(stdout), nil
 }
 
+func SymbolicRefShort(ctx context.Context, runner Runner, ref string) (string, error) {
+	stdout, stderr, err := runner.Run(ctx, "symbolic-ref", "--short", ref)
+	if err != nil {
+		if classified := classifyGitStderr(stderr); classified != nil {
+			return "", fmt.Errorf("symbolic ref: %w", classified)
+		}
+		return "", fmt.Errorf("symbolic ref: %w: %s", err, stderr)
+	}
+	return strings.TrimSpace(stdout), nil
+}
+
 func CurrentBranchAt(ctx context.Context, runner Runner, repoRoot string) (string, error) {
 	stdout, stderr, err := runner.Run(ctx, "-C", repoRoot, "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {

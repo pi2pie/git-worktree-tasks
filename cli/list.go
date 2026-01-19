@@ -110,7 +110,9 @@ func newListCommand() *cobra.Command {
 					return err
 				}
 				if ok {
-					fmt.Fprintln(cmd.OutOrStdout(), displayPath(repoRoot, path, opts.abs))
+					if _, err := fmt.Fprintln(cmd.OutOrStdout(), displayPath(repoRoot, path, opts.abs)); err != nil {
+						return err
+					}
 					return nil
 				}
 			}
@@ -162,7 +164,9 @@ func renderList(cmd *cobra.Command, format, field string, rows []listRow, grid b
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), string(payload))
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), string(payload)); err != nil {
+			return err
+		}
 		return nil
 	case "csv":
 		writer := csv.NewWriter(cmd.OutOrStdout())
@@ -186,7 +190,9 @@ func renderList(cmd *cobra.Command, format, field string, rows []listRow, grid b
 		if len(rows) == 0 {
 			return fmt.Errorf("no matching worktrees found")
 		}
-		fmt.Fprintln(cmd.OutOrStdout(), listFieldValue(rows[0], field))
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), listFieldValue(rows[0], field)); err != nil {
+			return err
+		}
 		return nil
 	default:
 		return fmt.Errorf("unsupported output format: %s", format)

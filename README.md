@@ -425,6 +425,13 @@ make clean        # Remove dist/
 make help         # Show all targets
 ```
 
+### Testing and Linting
+
+```bash
+go test ./...
+golangci-lint run
+```
+
 ### Project Structure
 
 ```

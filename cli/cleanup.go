@@ -98,18 +98,24 @@ func newCleanupCommand() *cobra.Command {
 			if opts.removeWorktree && !worktreeExists {
 				if opts.removeBranch {
 					if branchExists {
-						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
 							ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q; branch %q exists", task, branch)),
-						)
+						); err != nil {
+							return err
+						}
 					} else {
-						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
 							ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q; no branch %q", task, branch)),
-						)
+						); err != nil {
+							return err
+						}
 					}
 				} else {
-					fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
 						ui.WarningStyle.Render(fmt.Sprintf("no worktree found for task %q", task)),
-					)
+					); err != nil {
+						return err
+					}
 				}
 			}
 
@@ -133,10 +139,12 @@ func newCleanupCommand() *cobra.Command {
 
 			if opts.removeBranch {
 				if !branchExists {
-					if !(opts.removeWorktree && !worktreeExists) {
-						fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
+					if !opts.removeWorktree || worktreeExists {
+						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n",
 							ui.WarningStyle.Render(fmt.Sprintf("no branch %q to remove", branch)),
-						)
+						); err != nil {
+							return err
+						}
 					}
 				} else {
 					if !opts.yes {
@@ -162,7 +170,9 @@ func newCleanupCommand() *cobra.Command {
 				}
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("cleanup complete"))
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("cleanup complete")); err != nil {
+				return err
+			}
 			return nil
 		},
 	}

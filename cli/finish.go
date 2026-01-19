@@ -128,11 +128,13 @@ func newFinishCommand() *cobra.Command {
 				}
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "%s %s %s\n",
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s %s\n",
 				ui.SuccessStyle.Render("merged"),
 				ui.AccentStyle.Render(branch),
 				ui.MutedStyle.Render(fmt.Sprintf("into %s", target)),
-			)
+			); err != nil {
+				return err
+			}
 			return nil
 		},
 	}
@@ -153,7 +155,9 @@ func newFinishCommand() *cobra.Command {
 
 func runGit(cmd *cobra.Command, dryRun bool, runner git.Runner, args ...string) error {
 	if dryRun {
-		fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(args))
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(args)); err != nil {
+			return err
+		}
 		return nil
 	}
 	_, stderr, err := runner.Run(context.Background(), args...)

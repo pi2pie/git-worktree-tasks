@@ -16,7 +16,9 @@ func confirmPrompt(in io.Reader, out io.Writer, message string) (bool, error) {
 		ui.AccentStyle.Render("'yes'"),
 		ui.MutedStyle.Render("to confirm:"),
 	)
-	fmt.Fprintf(out, "%s %s ", prompt, confirmation)
+	if _, err := fmt.Fprintf(out, "%s %s ", prompt, confirmation); err != nil {
+		return false, err
+	}
 	reader := bufio.NewReader(in)
 	line, err := reader.ReadString('\n')
 	if err != nil && err != io.EOF {

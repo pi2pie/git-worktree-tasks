@@ -25,10 +25,10 @@ func Execute() int {
 			return 0
 		}
 		if errors.Is(err, errCanceled) {
-			fmt.Fprintln(cmd.ErrOrStderr(), ui.WarningStyle.Render("git worktree task process canceled"))
+			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), ui.WarningStyle.Render("git worktree task process canceled"))
 			return 3
 		}
-		fmt.Fprintln(cmd.ErrOrStderr(), ui.ErrorStyle.Render(err.Error()))
+		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), ui.ErrorStyle.Render(err.Error()))
 		return 1
 	}
 	if state.hasWarnings && state.exitOnWarning {
@@ -62,7 +62,9 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if state.listThemes {
-				fmt.Fprintln(cmd.OutOrStdout(), strings.Join(ui.ThemeNames(), "\n"))
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), strings.Join(ui.ThemeNames(), "\n")); err != nil {
+					return err
+				}
 				return errThemesListed
 			}
 			return cmd.Help()
@@ -77,7 +79,9 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 	cmd.PersistentFlags().BoolVar(&state.listThemes, "themes", false, "print available themes and exit")
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if state.listThemes {
-			fmt.Fprintln(cmd.OutOrStdout(), strings.Join(ui.ThemeNames(), "\n"))
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), strings.Join(ui.ThemeNames(), "\n")); err != nil {
+				return err
+			}
 			return errThemesListed
 		}
 		themeName := state.theme

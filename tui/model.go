@@ -148,7 +148,7 @@ func newListTable(width, height int, rows []listRow) table.Model {
 	t = updateListTableLayout(t, width, height, rows)
 	styles := table.DefaultStyles()
 	styles.Header = ui.HeaderStyle
-	styles.Selected = ui.AccentStyle.Copy().Reverse(true)
+	styles.Selected = ui.AccentStyle.Reverse(true)
 	t.SetStyles(styles)
 	return t
 }
