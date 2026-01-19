@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
 	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
@@ -53,7 +54,11 @@ func newCreateCommand() *cobra.Command {
 			}
 			if worktreeExists {
 				if opts.skipExisting {
-					return handleExistingWorktree(cmd, repoRoot, path, task, opts)
+					branch, err := existingWorktreeBranch(ctx, runner, repoRoot, path, task)
+					if err != nil {
+						return err
+					}
+					return handleExistingWorktree(cmd, repoRoot, path, branch, opts)
 				}
 				return fmt.Errorf("worktree path already occupied: %s", displayPath(repoRoot, path, false))
 			}
@@ -119,14 +124,28 @@ func worktreePathOverride(repoRoot, path string) string {
 	return filepath.Join(repoRoot, path)
 }
 
-func handleExistingWorktree(cmd *cobra.Command, repoRoot, path, task string, opts *createOptions) error {
+func existingWorktreeBranch(ctx context.Context, runner git.Runner, repoRoot, path, fallback string) (string, error) {
+	wt, ok, err := worktree.LookupByPath(ctx, runner, repoRoot, path)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return fallback, nil
+	}
+	if wt.Branch != "" {
+		return strings.TrimPrefix(wt.Branch, "refs/heads/"), nil
+	}
+	return "detached", nil
+}
+
+func handleExistingWorktree(cmd *cobra.Command, repoRoot, path, branch string, opts *createOptions) error {
 	display := displayPath(repoRoot, path, false)
 	switch opts.output {
 	case "text":
 		fmt.Fprintf(cmd.OutOrStdout(), "%s: %s (branch: %s)\n",
 			ui.WarningStyle.Render("worktree exists"),
 			ui.AccentStyle.Render(display),
-			ui.AccentStyle.Render(task),
+			ui.AccentStyle.Render(branch),
 		)
 	case "raw":
 		fmt.Fprintln(cmd.OutOrStdout(), display)
