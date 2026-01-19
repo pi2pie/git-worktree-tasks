@@ -113,6 +113,10 @@ func loadRowsCmd() tea.Cmd {
 		if err != nil {
 			return errMsg{err: err}
 		}
+		shortHashLen, err := worktree.ShortHashLength(ctx, runner, repoRoot)
+		if err != nil {
+			return errMsg{err: err}
+		}
 		rows := make([]listRow, 0, len(worktrees))
 		for _, wt := range worktrees {
 			branch := strings.TrimPrefix(wt.Branch, "refs/heads/")
@@ -125,7 +129,7 @@ func loadRowsCmd() tea.Cmd {
 				Branch:  branch,
 				Path:    displayPath(repoRoot, wt.Path),
 				Present: "true",
-				Head:    worktree.ShortHash(wt.Head),
+				Head:    worktree.ShortHash(wt.Head, shortHashLen),
 			})
 		}
 		return rowsMsg(rows)

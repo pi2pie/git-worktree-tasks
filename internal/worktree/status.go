@@ -26,16 +26,21 @@ func Status(ctx context.Context, runner git.Runner, path string, target string) 
 	}
 	info.Dirty = strings.TrimSpace(stdout) != ""
 
-	stdout, stderr, err = runner.Run(ctx, "-C", path, "log", "-1", "--pretty=format:%h %s")
+	shortHashLen, err := ShortHashLength(ctx, runner, path)
+	if err != nil {
+		return info, err
+	}
+
+	stdout, stderr, err = runner.Run(ctx, "-C", path, "log", "-1", "--pretty=format:%H %s")
 	if err != nil {
 		return info, fmt.Errorf("status last commit: %w: %s", err, stderr)
 	}
-	info.LastCommit = strings.TrimSpace(stdout)
+	info.LastCommit = formatCommitLine(stdout, shortHashLen)
 
 	if target != "" {
 		stdout, stderr, err = runner.Run(ctx, "-C", path, "merge-base", "HEAD", target)
 		if err == nil {
-			info.Base = ShortHash(strings.TrimSpace(stdout))
+			info.Base = ShortHash(strings.TrimSpace(stdout), shortHashLen)
 		}
 
 		stdout, stderr, err = runner.Run(ctx, "-C", path, "rev-list", "--left-right", "--count", target+"...HEAD")
@@ -54,9 +59,14 @@ func Status(ctx context.Context, runner git.Runner, path string, target string) 
 	return info, nil
 }
 
-func ShortHash(hash string) string {
-	if len(hash) <= 7 {
-		return hash
+func formatCommitLine(line string, shortHashLen int) string {
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return ""
 	}
-	return hash[:7]
+	parts := strings.SplitN(line, " ", 2)
+	if len(parts) == 1 {
+		return ShortHash(parts[0], shortHashLen)
+	}
+	return ShortHash(parts[0], shortHashLen) + " " + parts[1]
 }
