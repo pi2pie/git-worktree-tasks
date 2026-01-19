@@ -33,6 +33,9 @@ func newCleanupCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if _, err := git.CurrentBranch(ctx, runner); err != nil {
+				return err
+			}
 			repo, err := repoBaseName(ctx, runner)
 			if err != nil {
 				return err
