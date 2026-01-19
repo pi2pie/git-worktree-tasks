@@ -68,6 +68,10 @@ func newListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			shortHashLen, err := worktree.ShortHashLength(ctx, runner, repoRoot)
+			if err != nil {
+				return err
+			}
 
 			rows := make([]listRow, 0, len(worktrees))
 			for _, wt := range worktrees {
@@ -81,7 +85,7 @@ func newListCommand() *cobra.Command {
 					Branch:  branch,
 					Path:    displayPath(repoRoot, wt.Path, opts.abs),
 					Present: true,
-					Head:    worktree.ShortHash(wt.Head),
+					Head:    worktree.ShortHash(wt.Head, shortHashLen),
 				}
 				if query != "" && !matchesTask(row.Task, query, opts.strict) {
 					continue

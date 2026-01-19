@@ -9,6 +9,7 @@
 #
 # Usage:
 #   ./scripts/go-uninstall.sh [install-directory]
+#   MAN_DIR=~/.local/share/man/man1 ./scripts/go-uninstall.sh
 #
 # Examples:
 #   ./scripts/go-uninstall.sh                    # Remove from $GOPATH/bin
@@ -56,7 +57,16 @@ else
     fi
 fi
 
+# Determine man page directory (override with MAN_DIR)
+if [ -n "$MAN_DIR" ]; then
+    MAN_INSTALL_DIR="$MAN_DIR"
+else
+    INSTALL_PREFIX=$(dirname "$INSTALL_DIR")
+    MAN_INSTALL_DIR="$INSTALL_PREFIX/share/man/man1"
+fi
+
 print_info "Uninstall directory: $INSTALL_DIR"
+print_info "Man directory: $MAN_INSTALL_DIR"
 
 # Check if directory exists
 if [ ! -d "$INSTALL_DIR" ]; then
@@ -92,6 +102,26 @@ else
     print_warning "gwtt not found in $INSTALL_DIR"
 fi
 
+# Remove man pages
+if [ -d "$MAN_INSTALL_DIR" ]; then
+    MAN_GLOB_ROOT="$MAN_INSTALL_DIR/git-worktree-tasks"*.1
+    MAN_GLOB_ALIAS="$MAN_INSTALL_DIR/gwtt"*.1
+    if ls $MAN_GLOB_ROOT $MAN_GLOB_ALIAS &> /dev/null; then
+        echo ""
+        print_info "Removing man pages..."
+        if rm $MAN_GLOB_ROOT $MAN_GLOB_ALIAS; then
+            print_success "Removed man pages"
+        else
+            print_error "Failed to remove man pages"
+            exit 1
+        fi
+    else
+        print_warning "Man pages not found in $MAN_INSTALL_DIR"
+    fi
+else
+    print_warning "Man directory not found: $MAN_INSTALL_DIR"
+fi
+
 # Print cleanup instructions
 echo ""
 echo "========================================"
@@ -99,6 +129,7 @@ print_success "Uninstallation complete!"
 echo "========================================"
 echo ""
 echo "Binaries removed from: $INSTALL_DIR"
+echo "Man pages removed from: $MAN_INSTALL_DIR"
 echo ""
 echo "Additional cleanup needed:"
 echo ""

@@ -6,10 +6,12 @@
 #
 # Usage: ./scripts/go-install.sh [install_path]
 #   install_path: Optional. Defaults to $(go env GOBIN) or $GOPATH/bin
+#   MAN_DIR: Optional env var. Defaults to <install_prefix>/share/man/man1
 #
 # Example:
 #   ./scripts/go-install.sh                    # Install to default location
 #   ./scripts/go-install.sh ~/.local/bin       # Install to custom location
+#   MAN_DIR=~/.local/share/man/man1 ./scripts/go-install.sh
 
 set -e
 
@@ -43,6 +45,14 @@ else
     fi
 fi
 
+# Determine man page install directory (override with MAN_DIR)
+if [ -n "$MAN_DIR" ]; then
+    MAN_INSTALL_DIR="$MAN_DIR"
+else
+    INSTALL_PREFIX=$(dirname "$INSTALL_DIR")
+    MAN_INSTALL_DIR="$INSTALL_PREFIX/share/man/man1"
+fi
+
 # Create installation directory if it doesn't exist
 if [ ! -d "$INSTALL_DIR" ]; then
     echo -e "${YELLOW}Creating installation directory: $INSTALL_DIR${NC}"
@@ -52,6 +62,18 @@ fi
 # Check if installation directory is writable
 if [ ! -w "$INSTALL_DIR" ]; then
     echo -e "${RED}✗ Installation directory is not writable: $INSTALL_DIR${NC}"
+    exit 1
+fi
+
+# Create man directory if it doesn't exist
+if [ ! -d "$MAN_INSTALL_DIR" ]; then
+    echo -e "${YELLOW}Creating man directory: $MAN_INSTALL_DIR${NC}"
+    mkdir -p "$MAN_INSTALL_DIR"
+fi
+
+# Check if man directory is writable
+if [ ! -w "$MAN_INSTALL_DIR" ]; then
+    echo -e "${RED}✗ Man directory is not writable: $MAN_INSTALL_DIR${NC}"
     exit 1
 fi
 
@@ -76,9 +98,30 @@ else
 fi
 
 echo ""
+echo -e "${YELLOW}Installing man pages...${NC}"
+
+MAN_SOURCE_DIR="./man/man1"
+if ls "$MAN_SOURCE_DIR"/*.1 &> /dev/null; then
+    cp "$MAN_SOURCE_DIR/"*.1 "$MAN_INSTALL_DIR/"
+    echo -e "  ${GREEN}✓${NC} Installed man pages from $MAN_SOURCE_DIR"
+else
+    MAN_BUILD_DIR=$(mktemp -d)
+    trap 'rm -rf "$MAN_BUILD_DIR"' EXIT
+    if go run ./scripts/generate-man.go -out "$MAN_BUILD_DIR" -use git-worktree-tasks -title GIT-WORKTREE-TASKS -source git-worktree-tasks \
+        && go run ./scripts/generate-man.go -out "$MAN_BUILD_DIR" -use gwtt -title GWTT -source gwtt; then
+        cp "$MAN_BUILD_DIR/man1/"*.1 "$MAN_INSTALL_DIR/"
+        echo -e "  ${GREEN}✓${NC} Generated and installed man pages"
+    else
+        echo -e "${RED}✗ Failed to generate man pages${NC}"
+        exit 1
+    fi
+fi
+
+echo ""
 echo -e "${GREEN}✓ Installation complete!${NC}"
 echo ""
 echo "Both binaries have been installed to: $INSTALL_DIR"
+echo "Man pages installed to: $MAN_INSTALL_DIR"
 echo ""
 echo "Next steps:"
 echo "1. Verify $INSTALL_DIR is in your \$PATH:"
