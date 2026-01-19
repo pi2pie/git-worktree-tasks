@@ -61,12 +61,24 @@ func newCleanupCommand() *cobra.Command {
 			resolvedPath := path
 			worktreeExists := false
 			branchRef := "refs/heads/" + branch
+			repoRootPath, err := worktree.NormalizePath(repoRoot, repoRoot)
+			if err != nil {
+				return err
+			}
 			for _, wt := range worktrees {
-				if wt.Branch == branchRef {
-					resolvedPath = wt.Path
-					worktreeExists = true
-					break
+				if wt.Branch != branchRef {
+					continue
 				}
+				wtPath, err := worktree.NormalizePath(repoRoot, wt.Path)
+				if err != nil {
+					return err
+				}
+				if wtPath == repoRootPath {
+					continue
+				}
+				resolvedPath = wt.Path
+				worktreeExists = true
+				break
 			}
 
 			if !worktreeExists {
