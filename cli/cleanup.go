@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
 	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
@@ -71,12 +70,12 @@ func newCleanupCommand() *cobra.Command {
 			}
 
 			if !worktreeExists {
-				targetPath, err := normalizeCleanupPath(repoRoot, path)
+				targetPath, err := worktree.NormalizePath(repoRoot, path)
 				if err != nil {
 					return err
 				}
 				for _, wt := range worktrees {
-					wtPath, err := normalizeCleanupPath(repoRoot, wt.Path)
+					wtPath, err := worktree.NormalizePath(repoRoot, wt.Path)
 					if err != nil {
 						return err
 					}
@@ -185,15 +184,4 @@ func newCleanupCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
 
 	return cmd
-}
-
-func normalizeCleanupPath(repoRoot, path string) (string, error) {
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(repoRoot, path)
-	}
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return "", fmt.Errorf("normalize path: %w", err)
-	}
-	return filepath.Clean(absPath), nil
 }

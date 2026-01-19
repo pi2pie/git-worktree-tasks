@@ -361,6 +361,9 @@ gwtt list my-task -o raw -f branch | pbcopy
 # Open worktree in VS Code
 code "$(gwtt list my-task -o raw)"
 
+# Open Worktree in Zed
+zed "$(gwtt list my-task -o raw)"
+
 # Open in Cursor
 cursor "$(gwtt list my-task -o raw)"
 ```
