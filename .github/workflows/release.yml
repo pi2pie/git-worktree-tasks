@@ -9,6 +9,9 @@ on:
       tag:
         description: "Tag to release (e.g., v1.2.3 or v1.2.3-rc.1)"
         required: true
+      shallow_since:
+        description: "Optional shallow fetch cutoff date (YYYY-MM-DD); leave blank to unshallow"
+        required: false
       prerelease:
         description: "Mark release as prerelease"
         type: boolean
@@ -22,14 +25,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          fetch-depth: 1
           ref: ${{ inputs.tag || github.ref }}
+          show-progress: false
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
@@ -59,16 +62,71 @@ jobs:
     needs: checks
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          fetch-depth: 1
           ref: ${{ inputs.tag || github.ref }}
+          show-progress: false
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+
+      - name: Fetch tags (optional shallow)
+        env:
+          SHALLOW_SINCE: ${{ inputs.shallow_since }}
+        run: |
+          FETCH_ARGS=()
+          if [ -n "$SHALLOW_SINCE" ]; then
+            FETCH_ARGS=(--shallow-since="$SHALLOW_SINCE")
+          elif [ -f .git/shallow ]; then
+            git fetch origin --tags --unshallow
+          fi
+          git fetch origin --tags "${FETCH_ARGS[@]}"
+
+      - name: Ensure tag is on allowed branch
+        env:
+          SHALLOW_SINCE: ${{ inputs.shallow_since }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          FETCH_ARGS=()
+          if [ -n "$SHALLOW_SINCE" ]; then
+            FETCH_ARGS=(--shallow-since="$SHALLOW_SINCE")
+          elif [ -f .git/shallow ]; then
+            git fetch origin --tags --unshallow
+          fi
+
+          git fetch origin --no-tags main "${FETCH_ARGS[@]}"
+          git fetch origin \
+            --no-tags \
+            "refs/heads/beta*:refs/remotes/origin/beta*" \
+            "refs/heads/alpha*:refs/remotes/origin/alpha*" \
+            "refs/heads/canary*:refs/remotes/origin/canary*" \
+            "refs/heads/dev*:refs/remotes/origin/dev*" \
+            "${FETCH_ARGS[@]}" || true
+
+          TAG_COMMIT=$(git rev-list -n 1 "${RELEASE_TAG}")
+          if git merge-base --is-ancestor "$TAG_COMMIT" "origin/main"; then
+            echo "Tag commit is on main."
+            exit 0
+          fi
+
+          MATCHING_BRANCH=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin \
+            | grep -Ei 'origin/.*(beta|alpha|canary|dev)' \
+            | while read -r branch; do
+                if git merge-base --is-ancestor "$TAG_COMMIT" "$branch"; then
+                  echo "$branch"
+                  break
+                fi
+              done)
+
+          if [ -n "$MATCHING_BRANCH" ]; then
+            echo "Tag commit is on allowed branch: $MATCHING_BRANCH"
+          else
+            echo "Tag commit is not on main or an allowed branch (beta/alpha/canary/dev)." >&2
+            exit 1
+          fi
 
       - name: Verify tag exists (manual runs)
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -100,11 +158,37 @@ jobs:
             echo "IS_PRERELEASE=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Compute previous stable tag
+        id: previous_stable
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if [[ ${RELEASE_TAG} == *-alpha* || ${RELEASE_TAG} == *-beta* || ${RELEASE_TAG} == *-rc* || ${RELEASE_TAG} == *-canary* ]] ; then
+            exit 0
+          fi
+
+          PREVIOUS_TAG=$(
+            git tag --list 'v*' --sort=version:refname \
+              | grep -Ev '(-alpha|-beta|-rc|-canary)' \
+              | awk -v current="${RELEASE_TAG}" '
+                $0 == current { print prev; exit }
+                { prev=$0 }
+              '
+          )
+
+          if [[ -n "${PREVIOUS_TAG}" ]]; then
+            echo "PREVIOUS_TAG=${PREVIOUS_TAG}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set previous tag for stable releases
+        if: ${{ steps.previous_stable.outputs.PREVIOUS_TAG != '' }}
+        run: echo "GORELEASER_PREVIOUS_TAG=${{ steps.previous_stable.outputs.PREVIOUS_TAG }}" >> $GITHUB_ENV
+
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: latest
+          version: "~> v2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -27,6 +27,10 @@ Use the following skill for this repository:
 
 All meaningful agent work SHOULD be documented.
 
+Optional metadata:
+- If you update an existing plan, research doc, or job record, you MAY add a `modified-date: YYYY-MM-DD` field to the front-matter.
+- Keep the original `date` value unchanged; `modified-date` is for the latest update.
+
 ### Timezone
 
 - Unless a document or request specifies otherwise, record dates in UTC.
