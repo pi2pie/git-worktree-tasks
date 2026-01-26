@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
@@ -27,7 +26,7 @@ func newCleanupCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		Aliases: []string{"rm"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := cmd.Context()
 			runner := defaultRunner()
 			repoRoot, err := repoRoot(ctx, runner)
 			if err != nil {
@@ -140,10 +139,10 @@ func newCleanupCommand() *cobra.Command {
 						return errCanceled
 					}
 				}
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", resolvedPath); err != nil {
+				if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", resolvedPath); err != nil {
 					return err
 				}
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "prune"); err != nil {
+				if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "prune"); err != nil {
 					return err
 				}
 			}
@@ -175,7 +174,7 @@ func newCleanupCommand() *cobra.Command {
 					if opts.forceBranch {
 						deleteFlag = "-D"
 					}
-					if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "branch", deleteFlag, branch); err != nil {
+					if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "branch", deleteFlag, branch); err != nil {
 						return err
 					}
 				}

@@ -67,12 +67,19 @@ func Status(ctx context.Context, runner git.Runner, path string, target string) 
 				return info, fmt.Errorf("status ahead/behind: %w: %s", err, stderr)
 			}
 			parts := strings.Fields(stdout)
-			if len(parts) >= 2 {
-				behind, _ := strconv.Atoi(parts[0])
-				ahead, _ := strconv.Atoi(parts[1])
-				info.Behind = behind
-				info.Ahead = ahead
+			if len(parts) < 2 {
+				return info, fmt.Errorf("status ahead/behind parse: expected 2 fields, got %d (%q)", len(parts), strings.TrimSpace(stdout))
 			}
+			behind, err := strconv.Atoi(parts[0])
+			if err != nil {
+				return info, fmt.Errorf("status ahead/behind parse: behind %q: %w", parts[0], err)
+			}
+			ahead, err := strconv.Atoi(parts[1])
+			if err != nil {
+				return info, fmt.Errorf("status ahead/behind parse: ahead %q: %w", parts[1], err)
+			}
+			info.Behind = behind
+			info.Ahead = ahead
 		}
 	} else {
 		info.LastCommit = "empty history"

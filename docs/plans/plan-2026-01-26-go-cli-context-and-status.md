@@ -34,6 +34,9 @@ Improve CLI correctness and UX by propagating contexts, making dry-run output re
 - [ ] Handle `rev-list` parsing errors explicitly in `worktree.Status`.
 - [ ] Update/add tests for context usage and status parsing behavior.
 
+## Related Jobs
+- docs/plans/jobs/2026-01-26-cli-context-and-status.md
+
 ## Risks
 - Minor behavior changes if callers relied on silent parsing failures.
 - Any quoting changes may affect copy/paste expectations; keep it conservative.

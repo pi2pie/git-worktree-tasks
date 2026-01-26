@@ -30,7 +30,7 @@ func newFinishCommand() *cobra.Command {
 		Short: "Merge a task branch into a target branch",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := cmd.Context()
 			runner := defaultRunner()
 
 			repoRoot, err := repoRoot(ctx, runner)
@@ -68,20 +68,20 @@ func newFinishCommand() *cobra.Command {
 			}
 
 			if opts.rebase {
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "checkout", branch); err != nil {
+				if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "checkout", branch); err != nil {
 					return err
 				}
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "rebase", target); err != nil {
+				if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "rebase", target); err != nil {
 					return err
 				}
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "checkout", target); err != nil {
+				if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "checkout", target); err != nil {
 					return err
 				}
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "merge", "--ff-only", branch); err != nil {
+				if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "merge", "--ff-only", branch); err != nil {
 					return err
 				}
 			} else {
-				if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "checkout", target); err != nil {
+				if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "checkout", target); err != nil {
 					return err
 				}
 
@@ -93,7 +93,7 @@ func newFinishCommand() *cobra.Command {
 					mergeArgs = append(mergeArgs, "--squash")
 				}
 				mergeArgs = append(mergeArgs, branch)
-				if err := runGit(cmd, opts.dryRun, runner, mergeArgs...); err != nil {
+				if err := runGit(ctx, cmd, opts.dryRun, runner, mergeArgs...); err != nil {
 					return err
 				}
 			}
@@ -110,10 +110,10 @@ func newFinishCommand() *cobra.Command {
 				}
 
 				if opts.removeWorktree {
-					if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", path); err != nil {
+					if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", path); err != nil {
 						return err
 					}
-					if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "prune"); err != nil {
+					if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "prune"); err != nil {
 						return err
 					}
 				}
@@ -122,7 +122,7 @@ func newFinishCommand() *cobra.Command {
 					if opts.forceBranch {
 						deleteFlag = "-D"
 					}
-					if err := runGit(cmd, opts.dryRun, runner, "-C", repoRoot, "branch", deleteFlag, branch); err != nil {
+					if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "branch", deleteFlag, branch); err != nil {
 						return err
 					}
 				}
@@ -153,19 +153,19 @@ func newFinishCommand() *cobra.Command {
 	return cmd
 }
 
-func runGit(cmd *cobra.Command, dryRun bool, runner git.Runner, args ...string) error {
+func runGit(ctx context.Context, cmd *cobra.Command, dryRun bool, runner git.Runner, args ...string) error {
 	if dryRun {
-		if _, err := fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(args)); err != nil {
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), formatGitCommand(args)); err != nil {
 			return err
 		}
 		return nil
 	}
-	_, stderr, err := runner.Run(context.Background(), args...)
+	_, stderr, err := runner.Run(ctx, args...)
 	if err != nil {
 		if stderr != "" {
-			return fmt.Errorf("git %s: %w: %s", stringSlice(args), err, stderr)
+			return fmt.Errorf("%s: %w: %s", formatGitCommand(args), err, stderr)
 		}
-		return fmt.Errorf("git %s: %w", stringSlice(args), err)
+		return fmt.Errorf("%s: %w", formatGitCommand(args), err)
 	}
 	return nil
 }
