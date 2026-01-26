@@ -124,6 +124,8 @@ make go-uninstall
 - **Go 1.25.5+** for building from source
 - **`$GOPATH/bin` in `$PATH`** for `go-install` targets
 
+> **Windows PATH Note:** If you install `gwtt.exe` into a custom folder (e.g., `C:\Users\<you>\bin`), add that folder to your PATH and open a new terminal to pick it up.
+
 
 > [!Note]
 > **Ownership Change (v0.0.7+)**
