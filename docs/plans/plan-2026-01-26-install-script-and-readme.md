@@ -1,7 +1,7 @@
 ---
 title: "Install Script + README Clarity for Binary Names"
 date: 2026-01-26
-status: draft
+status: active
 agent: codex
 ---
 
@@ -33,8 +33,8 @@ Create a dedicated install/uninstall experience that detects platform, downloads
 ## Draft Install Logic (to implement)
 - **Policy (explicit)**
   - Primary command: `gwtt` (short and consistent with GoReleaser release assets).
-  - Release-asset install: always installs `gwtt`, then **prompts** to create a `git-worktree-tasks` symlink (default `Y`).
-  - `go install` behavior remains: it produces `git-worktree-tasks`; README explains the mismatch and how to add `gwtt` via symlink or alias.
+  - Release-asset install: downloads and installs `gwtt` into the **current directory by default** (or a provided path).
+  - `go install` behavior remains: it produces `git-worktree-tasks`; README explains the mismatch and how to add `gwtt` or `git-worktree-tasks` via manual alias/symlink.
 - **Detect platform/arch**
   - `uname -s` → `darwin|linux|windows` (treat MSYS/Cygwin/Git Bash as `windows`).
   - `uname -m` → map `x86_64|amd64` → `amd64`, `arm64|aarch64` → `arm64`.
@@ -49,17 +49,13 @@ Create a dedicated install/uninstall experience that detects platform, downloads
 - **Download & install**
   - Use `curl -fsSL` or `wget -qO` to download to a temp dir.
   - Extract `gwtt` (or `gwtt.exe`) from the archive.
-  - Install to target dir (default `~/.local/bin`, or user-specified arg), ensure executable bit on *nix.
-  - Prompt to create a `git-worktree-tasks` symlink (interactive `Y/n`, default is `Y`). Skip prompts when `-y/--yes` is provided.
-  - Optional man page install (non-Windows): if `man/man1/gwtt.1` exists in the archive, offer to install to a user manpath (e.g., `~/.local/share/man/man1`) and run `mandb` if available.
-    - If symlink is created, also install a matching `git-worktree-tasks.1` (either copy or symlink) for command parity.
+  - Install to target dir (default current directory, or user-specified arg), ensure executable bit on *nix.
+  - Do not create symlinks or install man pages; document optional manual setup in README.
 
 ## Packaging Notes
-- `.goreleaser.yml` currently archives only `README.md` and `LICENSE*`; man pages are **not** included yet.
-- Update GoReleaser archive files to include `man/man1/*.1` so the installer can offer man page installation.
+- `.goreleaser.yml` should include man pages for manual install (even if the script does not auto-install them).
 - **Uninstall**
-  - Remove installed `gwtt` from the install dir.
-  - If `git-worktree-tasks` is a symlink **and** points to `gwtt`, remove it; otherwise leave it untouched.
+  - Remove installed `gwtt` (or `gwtt.exe`) from the target dir (default current directory).
   - Keep uninstall script simple and path-scoped; no global cleanup beyond installed files.
 
 ## Makefile Alignment
@@ -67,8 +63,6 @@ Create a dedicated install/uninstall experience that detects platform, downloads
 - Keep existing Go-based install targets (e.g., `go-install`, `go-uninstall`) for developers or `go install` flow.
 
 ## Risks / Open Questions
-- Preferred default install path and whether to add a symlink or rename during install.
-- Whether to verify checksums/signatures for release assets.
 - How to handle Windows PATH guidance for `.exe` installs.
 
 ## Success Criteria

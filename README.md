@@ -5,8 +5,9 @@ A small CLI to manage task-based Git worktrees with predictable naming and clean
 ## Quick Start
 
 ```bash
-# Install (requires Go 1.25.5+)
-make go-install
+# Install latest release (run from your target folder)
+cd $HOME/.local/bin
+curl -fsSL https://raw.githubusercontent.com/pi2pie/git-worktree-tasks/main/scripts/install.sh | bash
 
 # Create a task worktree (defaults to current branch)
 gwtt create "my-feature"
@@ -26,7 +27,7 @@ gwtt cleanup "my-feature"
 ## Table of Contents
 
 - [Installation](#installation)
-- [Shell Configuration](#shell-configuration)
+- [Binary Naming and Shell Configuration](#binary-naming-and-shell-configuration)
 - [Configuration](#configuration)
 - [Usage Guide](#usage-guide)
   - [Commands Overview](#commands-overview)
@@ -43,31 +44,48 @@ gwtt cleanup "my-feature"
 
 ## Installation
 
-### Option 1: Using Makefile (Recommended)
+### Option 1: Install Latest Release (Recommended)
 
 ```bash
-git clone https://github.com/pi2pie/git-worktree-tasks
-cd git-worktree-tasks
-make go-install
+curl -fsSL https://raw.githubusercontent.com/pi2pie/git-worktree-tasks/main/scripts/install.sh | bash
+# Or with wget:
+wget -qO- https://raw.githubusercontent.com/pi2pie/git-worktree-tasks/main/scripts/install.sh | bash
 ```
 
-This installs both `git-worktree-tasks` and `gwtt` binaries to `$GOPATH/bin`.
-
-### Option 2: Using Installation Script
+Run from the directory where you want `gwtt` to live:
 
 ```bash
-./scripts/go-install.sh
-# Or with custom directory:
-./scripts/go-install.sh /usr/local/bin
+cd $HOME/.local/bin
+curl -fsSL https://raw.githubusercontent.com/pi2pie/git-worktree-tasks/main/scripts/install.sh | bash
 ```
 
-### Option 3: Standard Go Install
+Custom install directory (default is current folder):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/pi2pie/git-worktree-tasks/main/scripts/install.sh | bash -s -- ~/.local/bin
+```
+
+### Option 2: Using Makefile (Release Assets)
+
+```bash
+make install
+```
+
+Note: `make install` installs into the current directory (the repo root if you run it here).
+
+Directly from the repo:
+
+```bash
+./scripts/install.sh
+```
+
+### Option 3: Standard Go Install (Build From Source)
 
 ```bash
 go install github.com/pi2pie/git-worktree-tasks@latest
 ```
 
-> **Note:** This creates only `git-worktree-tasks`. For `gwtt`, add a shell alias (see below).
+> **Note:** `go install` creates `git-worktree-tasks`. Release assets install `gwtt` and can optionally create a `git-worktree-tasks` symlink.
 
 ### Option 4: Build Locally
 
@@ -76,9 +94,34 @@ make build
 # Binaries in dist/
 ```
 
+### Uninstall
+
+```bash
+./scripts/uninstall.sh
+# Or with Makefile:
+make uninstall
+```
+
+If the binary is not in the current directory, pass the install path:
+
+```bash
+./scripts/uninstall.sh $HOME/.local/bin
+```
+
+Go install removal:
+
+```bash
+./scripts/go-uninstall.sh
+# Or:
+make go-uninstall
+```
+
 ### Requirements
 
-- **Go 1.25.5+** for building
+- **curl or wget** for release install
+- **tar/unzip** for release install archives
+- **sha256sum or shasum** for release checksum verification
+- **Go 1.25.5+** for building from source
 - **`$GOPATH/bin` in `$PATH`** for `go-install` targets
 
 
@@ -90,7 +133,11 @@ make build
 > - **v0.0.7 and later:** `github.com/pi2pie/git-worktree-tasks`
 
 
-## Shell Configuration
+## Binary Naming and Shell Configuration
+
+- Release assets ship the `gwtt` binary.
+- `go install` produces `git-worktree-tasks`.
+- If you prefer `git-worktree-tasks`, create an alias or symlink manually.
 
 Set up the `gwtt` alias for convenience:
 
@@ -422,6 +469,8 @@ gwtt list feature-branch -o raw
 
 ```bash
 make build        # Build binaries to dist/
+make install      # Install gwtt from latest release
+make uninstall    # Remove release install
 make go-install   # Install to $GOPATH/bin
 make go-uninstall # Remove installed binaries
 make clean        # Remove dist/
@@ -468,7 +517,7 @@ export PATH="$(go env GOPATH)/bin:$PATH"
 
 ```bash
 # Use custom directory
-./scripts/go-install.sh $HOME/.local/bin
+./scripts/install.sh $HOME/.local/bin
 ```
 
 ### Shell Alias Not Working

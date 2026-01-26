@@ -1,4 +1,4 @@
-.PHONY: help build man go-build go-install go-uninstall clean
+.PHONY: help build man go-build install uninstall go-install go-uninstall clean
 
 # Build directory
 DIST_DIR := dist
@@ -11,6 +11,10 @@ help:
 	@echo "  make build           Build both git-worktree-tasks and gwtt binaries to $(DIST_DIR)/"
 	@echo "  make man             Generate man(1) pages to man/man1"
 	@echo "  make clean           Remove binaries from $(DIST_DIR)/"
+	@echo ""
+	@echo "Release Asset Installation:"
+	@echo "  make install         Install gwtt into the current directory"
+	@echo "  make uninstall       Remove gwtt from the current directory"
 	@echo ""
 	@echo "Go Developer Installation (requires Go):"
 	@echo "  make go-install      Build and install both binaries to \$$GOPATH/bin"
@@ -48,6 +52,16 @@ $(DIST_DIR):
 # Alias for build
 .PHONY: go-build
 go-build: build
+
+# Install binaries from release assets
+.PHONY: install
+install:
+	@bash ./scripts/install.sh
+
+# Uninstall binaries installed from release assets
+.PHONY: uninstall
+uninstall:
+	@bash ./scripts/uninstall.sh
 
 # Install binaries to $GOPATH/bin (requires Go)
 .PHONY: go-install
