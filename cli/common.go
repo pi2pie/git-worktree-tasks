@@ -91,3 +91,35 @@ func matchesTask(task, query string, strict bool) bool {
 	}
 	return strings.Contains(task, query)
 }
+
+func formatGitCommand(args []string) string {
+	return "git " + formatArgs(args)
+}
+
+func formatArgs(args []string) string {
+	parts := make([]string, 0, len(args))
+	for _, arg := range args {
+		parts = append(parts, shellQuote(arg))
+	}
+	return strings.Join(parts, " ")
+}
+
+func shellQuote(value string) string {
+	if value == "" {
+		return "''"
+	}
+	needsQuote := false
+	for _, r := range value {
+		switch r {
+		case ' ', '\t', '\n', '\r', '\v', '\f', '"', '\'', '\\', '$', '`':
+			needsQuote = true
+		}
+		if needsQuote {
+			break
+		}
+	}
+	if !needsQuote {
+		return value
+	}
+	return "'" + strings.ReplaceAll(value, "'", `'\'"\'"\'`) + "'"
+}

@@ -125,3 +125,35 @@ func TestFallbackPathForBranch(t *testing.T) {
 		t.Fatalf("fallbackPathForBranch() = %q, want %q", path, "/tmp/repo")
 	}
 }
+
+func TestFormatGitCommand(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "simple args",
+			args: []string{"status", "--porcelain"},
+			want: "git status --porcelain",
+		},
+		{
+			name: "space in arg",
+			args: []string{"-C", "/tmp/my repo", "status"},
+			want: "git -C '/tmp/my repo' status",
+		},
+		{
+			name: "single quote in arg",
+			args: []string{"commit", "-m", "it's done"},
+			want: "git commit -m 'it'\\'\"\\'\"\\'s done'",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := formatGitCommand(tt.args)
+			if got != tt.want {
+				t.Fatalf("formatGitCommand(%v) = %q, want %q", tt.args, got, tt.want)
+			}
+		})
+	}
+}

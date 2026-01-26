@@ -28,7 +28,7 @@ func newCreateCommand() *cobra.Command {
 		Short: "Create a worktree and branch for a task",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := cmd.Context()
 			runner := defaultRunner()
 
 			repoRoot, err := repoRoot(ctx, runner)
@@ -79,7 +79,7 @@ func newCreateCommand() *cobra.Command {
 			}
 			gitArgs := buildCreateWorktreeArgs(repoRoot, path, branch, base, branchExists)
 			if opts.dryRun {
-				if _, err := fmt.Fprintln(cmd.OutOrStdout(), "git", stringSlice(gitArgs)); err != nil {
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), formatGitCommand(gitArgs)); err != nil {
 					return err
 				}
 				return nil
@@ -122,10 +122,6 @@ func newCreateCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.skipExisting, "skip", false, "alias for --skip-existing")
 
 	return cmd
-}
-
-func stringSlice(args []string) string {
-	return fmt.Sprintf("%s", args)
 }
 
 func resolveCreateBase(currentBranch, override string) (string, error) {
