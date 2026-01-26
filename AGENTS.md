@@ -15,10 +15,10 @@ This document provides essential context for any agent working in this repositor
 
 ## Skills
 
-Use the following skill for this repository:
+Use the following skill for this repository. Skills are defined under `.github/skills/*`. How they’re discovered/loaded depends on the agent tool.
 
 - `golang-expert` — apply for all Go code changes, refactors, reviews, testing, or Go best‑practice questions.
-  - Skill file: `.codex/skills/golang-expert/SKILL.md`
+  - Skill file: `.github/skills/golang-expert/SKILL.md`
   - Load only the relevant reference files from the skill when needed.
 
 ---
