@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 )
 
+// projectConfigRoot returns the root directory for project config resolution.
+// It walks up from cwd looking for a .git marker (directory or file for worktrees/submodules).
+// Falls back to cwd if no .git is found.
 func projectConfigRoot() (string, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -21,6 +24,8 @@ func projectConfigRoot() (string, error) {
 	return cwd, nil
 }
 
+// findRepoRoot walks up from start looking for a .git marker.
+// Returns (root, true, nil) if found, ("", false, nil) if not found.
 func findRepoRoot(start string) (string, bool, error) {
 	dir := filepath.Clean(start)
 	for {
@@ -37,6 +42,8 @@ func findRepoRoot(start string) (string, bool, error) {
 	}
 }
 
+// hasGitDir checks if dir contains a .git entry (directory or file).
+// Git worktrees and submodules use a .git file containing "gitdir: /path/to/...".
 func hasGitDir(dir string) (bool, error) {
 	_, err := os.Stat(filepath.Join(dir, ".git"))
 	if err == nil {
