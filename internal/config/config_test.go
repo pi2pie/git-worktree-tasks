@@ -101,3 +101,37 @@ func TestLoadEnvColorInvalid(t *testing.T) {
 		t.Fatalf("Load() expected error")
 	}
 }
+
+func TestLoadConfigExplicitGridPreserved(t *testing.T) {
+	home := t.TempDir()
+	project := t.TempDir()
+
+	userConfigPath := filepath.Join(home, userConfigRelativePath)
+	if err := os.MkdirAll(filepath.Dir(userConfigPath), 0o755); err != nil {
+		t.Fatalf("MkdirAll error = %v", err)
+	}
+	writeFile(t, userConfigPath, `
+[list]
+grid = true
+`)
+	writeFile(t, filepath.Join(project, projectConfigPrimary), `
+[table]
+grid = false
+`)
+
+	restore := chdir(t, project)
+	defer restore()
+	t.Setenv("HOME", home)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if !cfg.List.Grid {
+		t.Fatalf("List.Grid = false, want true (user's explicit setting should be preserved)")
+	}
+	if cfg.Status.Grid {
+		t.Fatalf("Status.Grid = true, want false (should cascade from table.grid)")
+	}
+}

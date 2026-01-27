@@ -195,23 +195,36 @@ type cleanupConfigFile struct {
 	Confirm        *bool `toml:"confirm"`
 }
 
+type gridFlags struct {
+	listSet   bool
+	statusSet bool
+}
+
 func Load() (Config, error) {
 	cfg := DefaultConfig()
+	flags := gridFlags{}
 
-	if err := applyUserConfig(&cfg); err != nil {
+	if err := applyUserConfig(&cfg, &flags); err != nil {
 		return cfg, err
 	}
-	if err := applyProjectConfig(&cfg); err != nil {
+	if err := applyProjectConfig(&cfg, &flags); err != nil {
 		return cfg, err
 	}
 	if err := applyEnvConfig(&cfg); err != nil {
 		return cfg, err
 	}
 
+	if !flags.listSet {
+		cfg.List.Grid = cfg.Table.Grid
+	}
+	if !flags.statusSet {
+		cfg.Status.Grid = cfg.Table.Grid
+	}
+
 	return cfg, nil
 }
 
-func applyUserConfig(cfg *Config) error {
+func applyUserConfig(cfg *Config, flags *gridFlags) error {
 	home, err := os.UserHomeDir()
 	if err != nil || strings.TrimSpace(home) == "" {
 		return nil
@@ -222,12 +235,12 @@ func applyUserConfig(cfg *Config) error {
 		return err
 	}
 	if ok {
-		applyConfig(cfg, file)
+		applyConfig(cfg, flags, file)
 	}
 	return nil
 }
 
-func applyProjectConfig(cfg *Config) error {
+func applyProjectConfig(cfg *Config, flags *gridFlags) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("get working directory: %w", err)
@@ -244,7 +257,7 @@ func applyProjectConfig(cfg *Config) error {
 			return err
 		}
 		if ok {
-			applyConfig(cfg, file)
+			applyConfig(cfg, flags, file)
 			return nil
 		}
 	}
@@ -309,11 +322,7 @@ func envBool(key string) (bool, bool, error) {
 	}
 }
 
-func applyConfig(cfg *Config, file loadedConfigFile) {
-	tableGridSet := file.Table.Grid != nil
-	listGridSet := file.List.Grid != nil
-	statusGridSet := file.Status.Grid != nil
-
+func applyConfig(cfg *Config, flags *gridFlags, file loadedConfigFile) {
 	if name, ok := trimString(file.Theme.Name); ok {
 		cfg.Theme.Name = name
 	}
@@ -346,6 +355,7 @@ func applyConfig(cfg *Config, file loadedConfigFile) {
 	}
 	if file.List.Grid != nil {
 		cfg.List.Grid = *file.List.Grid
+		flags.listSet = true
 	}
 	if file.List.Strict != nil {
 		cfg.List.Strict = *file.List.Strict
@@ -358,6 +368,7 @@ func applyConfig(cfg *Config, file loadedConfigFile) {
 	}
 	if file.Status.Grid != nil {
 		cfg.Status.Grid = *file.Status.Grid
+		flags.statusSet = true
 	}
 	if file.Status.Strict != nil {
 		cfg.Status.Strict = *file.Status.Strict
@@ -394,14 +405,6 @@ func applyConfig(cfg *Config, file loadedConfigFile) {
 	}
 	if file.Cleanup.Confirm != nil {
 		cfg.Cleanup.Confirm = *file.Cleanup.Confirm
-	}
-	if tableGridSet {
-		if !listGridSet {
-			cfg.List.Grid = cfg.Table.Grid
-		}
-		if !statusGridSet {
-			cfg.Status.Grid = cfg.Table.Grid
-		}
 	}
 }
 
