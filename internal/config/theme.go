@@ -30,18 +30,18 @@ func ResolveThemeName() (string, error) {
 		return name, nil
 	}
 
-	cwd, err := os.Getwd()
+	root, err := projectConfigRoot()
 	if err != nil {
 		return "", err
 	}
 
-	if name, ok, err := themeFromFile(filepath.Join(cwd, projectConfigPrimary)); err != nil {
+	if name, ok, err := themeFromFile(filepath.Join(root, projectConfigPrimary)); err != nil {
 		return "", err
 	} else if ok {
 		return name, nil
 	}
 
-	if name, ok, err := themeFromFile(filepath.Join(cwd, projectConfigFallback)); err != nil {
+	if name, ok, err := themeFromFile(filepath.Join(root, projectConfigFallback)); err != nil {
 		return "", err
 	} else if ok {
 		return name, nil

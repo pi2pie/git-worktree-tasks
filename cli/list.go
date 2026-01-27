@@ -41,6 +41,23 @@ func newListCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			if cfg, ok := configFromContext(cmd.Context()); ok {
+				if !cmd.Flags().Changed("output") {
+					opts.output = cfg.List.Output
+				}
+				if !cmd.Flags().Changed("field") {
+					opts.field = cfg.List.Field
+				}
+				if !flagChangedAny(cmd, "absolute-path", "abs") {
+					opts.abs = cfg.List.AbsolutePath
+				}
+				if !cmd.Flags().Changed("grid") {
+					opts.grid = cfg.List.Grid
+				}
+				if !cmd.Flags().Changed("strict") {
+					opts.strict = cfg.List.Strict
+				}
+			}
 			repoRoot, err := repoRoot(ctx, runner)
 			if err != nil {
 				return err

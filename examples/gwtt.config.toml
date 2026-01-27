@@ -3,3 +3,45 @@
 
 [theme]
 name = "nord"
+
+[ui]
+color_enabled = true
+
+[table]
+grid = false
+
+[create]
+output = "text"
+skip_existing = false
+
+[create.path]
+root = "../"
+format = "{repo}_{task}"
+
+[list]
+output = "table"
+field = "path"
+absolute_path = false
+grid = false
+strict = false
+
+[status]
+output = "table"
+absolute_path = false
+grid = false
+strict = false
+
+[finish]
+cleanup = false
+remove_worktree = false
+remove_branch = false
+force_branch = false
+merge_mode = "ff"
+confirm = true # set false to bypass prompts (same as --yes)
+
+[cleanup]
+remove_worktree = true
+remove_branch = true
+worktree_only = false
+force_branch = false
+confirm = true # set false to bypass prompts (same as --yes)

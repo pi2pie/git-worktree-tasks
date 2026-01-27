@@ -46,6 +46,20 @@ func newStatusCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			if cfg, ok := configFromContext(cmd.Context()); ok {
+				if !cmd.Flags().Changed("output") {
+					opts.output = cfg.Status.Output
+				}
+				if !flagChangedAny(cmd, "absolute-path", "abs") {
+					opts.abs = cfg.Status.AbsolutePath
+				}
+				if !cmd.Flags().Changed("grid") {
+					opts.grid = cfg.Status.Grid
+				}
+				if !cmd.Flags().Changed("strict") {
+					opts.strict = cfg.Status.Strict
+				}
+			}
 			repoRoot, err := repoRoot(ctx, runner)
 			if err != nil {
 				return err
