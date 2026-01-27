@@ -1,7 +1,7 @@
 ---
 title: "Extensible config rollout"
 date: 2026-01-27
-status: active
+status: completed
 agent: codex
 ---
 
@@ -34,12 +34,12 @@ Ship an extensible config system beyond theme, prioritizing low-risk defaults an
 
 ### Phase 3: Verification & Docs
 - [x] Add tests for config resolution (env/project/user) and merge-mode validation.
-- [ ] Update examples and README config section.
-- [ ] Verify related docs status and update as phases complete:
-  - [ ] Plan status aligns with phase completion.
-  - [ ] Research status is updated (`draft` -> `in-progress`/`completed`).
-  - [ ] Schema doc status reflects readiness.
-  - [ ] Job records reflect actual work status.
+- [x] Update examples and README config section.
+- [x] Verify related docs status and update as phases complete:
+  - [x] Plan status aligns with phase completion.
+  - [x] Research status is updated (`draft` -> `in-progress`/`completed`).
+  - [x] Schema doc status reflects readiness.
+  - [x] Job records reflect actual work status.
 
 ## Dependencies
 - Current TOML parsing via `internal/config` (BurntSushi/toml).

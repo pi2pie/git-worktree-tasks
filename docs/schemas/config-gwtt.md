@@ -55,6 +55,7 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 - `force_branch` (bool, default: `false`)
 - `merge_mode` (string enum: `ff`, `no-ff`, `squash`, `rebase`; default: `ff`)
 - `confirm` (bool, default: `true`)
+  - `false` bypasses prompts (equivalent to `--yes`).
 
 #### Merge strategy mapping
 - `ff` (default): no merge flags.
@@ -69,6 +70,7 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 - `worktree_only` (bool, default: `false`)
 - `force_branch` (bool, default: `false`)
 - `confirm` (bool, default: `true`)
+  - `false` bypasses prompts (equivalent to `--yes`).
 
 ## Decisions
 - `create.path.format` must include `{task}` to preserve task discovery.

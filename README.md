@@ -161,25 +161,80 @@ ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 
 ## Configuration
 
-### Theme Selection
+### Precedence
 
-Set a color theme using (highest precedence first):
+Settings resolve in this order (highest precedence first):
 
 1. `--theme` flag
-2. `GWTT_THEME` environment variable
+2. Environment variables
 3. Project config (`gwtt.config.toml` or `gwtt.toml` in repo root)
 4. User config (`$HOME/.config/gwtt/config.toml`)
-5. Built-in default
+5. Built-in defaults
 
 ```bash
 # Environment variable
 export GWTT_THEME=nord
 
+# Disable color output
+export GWTT_COLOR=0
+
 # List available themes
 gwtt --themes
 ```
 
-**Config file format:**
+### Theme Selection
+
+```toml
+[theme]
+name = "nord"
+```
+
+### Other Defaults
+
+Common defaults you can set once:
+
+```toml
+[ui]
+color_enabled = true
+
+[table]
+grid = false
+
+[list]
+output = "table"
+field = "path"
+absolute_path = false
+grid = false
+strict = false
+
+[status]
+output = "table"
+absolute_path = false
+grid = false
+strict = false
+
+[finish]
+merge_mode = "ff" # ff, no-ff, squash, rebase
+confirm = true # set false to bypass prompts (same as --yes)
+cleanup = false
+remove_worktree = false
+remove_branch = false
+force_branch = false
+
+[cleanup]
+confirm = true # set false to bypass prompts (same as --yes)
+remove_worktree = true
+remove_branch = true
+worktree_only = false
+force_branch = false
+```
+
+### Config File Location
+
+Project: `gwtt.config.toml` or `gwtt.toml` in the repo root  
+User: `$HOME/.config/gwtt/config.toml`
+
+**Minimal config:**
 ```toml
 [theme]
 name = "nord"
