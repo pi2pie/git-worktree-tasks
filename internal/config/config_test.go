@@ -93,6 +93,32 @@ grid = false
 	}
 }
 
+func TestLoadConfigFromRepoRootInSubdir(t *testing.T) {
+	project := t.TempDir()
+	if err := os.Mkdir(filepath.Join(project, ".git"), 0o755); err != nil {
+		t.Fatalf("Mkdir(.git) error = %v", err)
+	}
+	writeFile(t, filepath.Join(project, projectConfigPrimary), `
+[list]
+output = "csv"
+`)
+	subdir := filepath.Join(project, "nested", "path")
+	if err := os.MkdirAll(subdir, 0o755); err != nil {
+		t.Fatalf("MkdirAll(subdir) error = %v", err)
+	}
+
+	restore := chdir(t, subdir)
+	defer restore()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.List.Output != "csv" {
+		t.Fatalf("List.Output = %q, want %q", cfg.List.Output, "csv")
+	}
+}
+
 func TestLoadEnvColorInvalid(t *testing.T) {
 	t.Setenv(envColorEnabled, "maybe")
 

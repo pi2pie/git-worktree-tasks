@@ -241,14 +241,14 @@ func applyUserConfig(cfg *Config, flags *gridFlags) error {
 }
 
 func applyProjectConfig(cfg *Config, flags *gridFlags) error {
-	cwd, err := os.Getwd()
+	root, err := projectConfigRoot()
 	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
+		return err
 	}
 
 	paths := []string{
-		filepath.Join(cwd, projectConfigPrimary),
-		filepath.Join(cwd, projectConfigFallback),
+		filepath.Join(root, projectConfigPrimary),
+		filepath.Join(root, projectConfigFallback),
 	}
 
 	for _, path := range paths {
