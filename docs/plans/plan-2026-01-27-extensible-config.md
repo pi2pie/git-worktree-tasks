@@ -1,7 +1,7 @@
 ---
 title: "Extensible config rollout"
 date: 2026-01-27
-status: draft
+status: active
 agent: codex
 ---
 
@@ -20,11 +20,11 @@ Ship an extensible config system beyond theme, prioritizing low-risk defaults an
 
 ## Plan
 ### Phase 1: Design
-- [ ] Create schema doc in `docs/schemas/config-gwtt.md`.
-- [ ] Define config schema for `ui`, `create`, `list`, `status`, `finish`, `cleanup` (exclude `base`/`target`).
-- [ ] Decide whether to include `create.path.format` in this phase; if yes, require `{task}` and document reversibility constraints.
-- [ ] Define merge strategy enum and mapping from flags + config.
-- [ ] Document env/config/flag precedence for new settings.
+- [x] Create schema doc in `docs/schemas/config-gwtt.md`.
+- [x] Define config schema for `ui`, `create`, `list`, `status`, `finish`, `cleanup` (exclude `base`/`target`).
+- [x] Decide whether to include `create.path.format` in this phase; if yes, require `{task}` and document reversibility constraints.
+- [x] Define merge strategy enum and mapping from flags + config.
+- [x] Document env/config/flag precedence for new settings.
 
 ### Phase 2: Implementation
 - [ ] Add config loader with precedence: flags > env > project > user > defaults.

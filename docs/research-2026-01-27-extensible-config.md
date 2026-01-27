@@ -1,7 +1,7 @@
 ---
 title: "Extensible config options beyond theme"
 date: 2026-01-27
-status: draft
+status: completed
 agent: codex
 ---
 

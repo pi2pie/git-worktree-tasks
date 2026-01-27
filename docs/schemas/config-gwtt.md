@@ -1,7 +1,7 @@
 ---
 title: "gwtt configuration schema"
 date: 2026-01-27
-status: draft
+status: completed
 agent: codex
 ---
 
@@ -16,39 +16,39 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 5. Built-in defaults
 
 ## Schema
-### [theme]
+### `[theme]`
 - `name` (string, default: `"default"`)
 
-### [ui]
+### `[ui]`
 - `color_enabled` (bool, default: `true`)
 
-### [table]
+### `[table]`
 - `grid` (bool, default: `false`)
 
-### [create]
+### `[create]`
 - `output` (string enum: `text`, `raw`; default: `text`)
 - `skip_existing` (bool, default: `false`)
 
-#### [create.path]
+#### `[create.path]`
 - `root` (string, default: `"../"`)
 - `format` (string, default: `"{repo}_{task}"`)
   - Must include `{task}`.
   - `{repo}` is optional.
 
-### [list]
+### `[list]`
 - `output` (string enum: `table`, `json`, `csv`, `raw`; default: `table`)
 - `field` (string enum: `path`, `task`, `branch`; default: `path`)
 - `absolute_path` (bool, default: `false`)
 - `grid` (bool, default: `false`)
 - `strict` (bool, default: `false`)
 
-### [status]
+### `[status]`
 - `output` (string enum: `table`, `json`, `csv`; default: `table`)
 - `absolute_path` (bool, default: `false`)
 - `grid` (bool, default: `false`)
 - `strict` (bool, default: `false`)
 
-### [finish]
+### `[finish]`
 - `cleanup` (bool, default: `false`)
 - `remove_worktree` (bool, default: `false`)
 - `remove_branch` (bool, default: `false`)
@@ -56,7 +56,14 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 - `merge_mode` (string enum: `ff`, `no-ff`, `squash`, `rebase`; default: `ff`)
 - `confirm` (bool, default: `true`)
 
-### [cleanup]
+#### Merge strategy mapping
+- `ff` (default): no merge flags.
+- `no-ff`: adds `--no-ff`.
+- `squash`: adds `--squash`.
+- `rebase`: uses the rebase flow (`rebase` then `merge --ff-only`).
+- Exactly one merge strategy may be active at a time; config and flags must agree.
+
+### `[cleanup]`
 - `remove_worktree` (bool, default: `true`)
 - `remove_branch` (bool, default: `true`)
 - `worktree_only` (bool, default: `false`)
