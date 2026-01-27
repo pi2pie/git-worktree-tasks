@@ -65,18 +65,8 @@ func newFinishCommand() *cobra.Command {
 				return err
 			}
 
-			strategyCount := 0
-			if opts.noFF {
-				strategyCount++
-			}
-			if opts.squash {
-				strategyCount++
-			}
-			if opts.rebase {
-				strategyCount++
-			}
-			if strategyCount > 1 {
-				return fmt.Errorf("merge strategies are mutually exclusive: choose only one of --no-ff, --squash, --rebase")
+			if err := validateMergeStrategy(opts); err != nil {
+				return err
 			}
 
 			task := worktree.SlugifyTask(args[0])
@@ -200,6 +190,23 @@ func applyMergeMode(opts *finishOptions, mode string) error {
 	default:
 		return fmt.Errorf("unsupported merge_mode: %s", mode)
 	}
+}
+
+func validateMergeStrategy(opts *finishOptions) error {
+	strategyCount := 0
+	if opts.noFF {
+		strategyCount++
+	}
+	if opts.squash {
+		strategyCount++
+	}
+	if opts.rebase {
+		strategyCount++
+	}
+	if strategyCount > 1 {
+		return fmt.Errorf("merge strategies are mutually exclusive: choose only one of --no-ff, --squash, --rebase")
+	}
+	return nil
 }
 
 func runGit(ctx context.Context, cmd *cobra.Command, dryRun bool, runner git.Runner, args ...string) error {

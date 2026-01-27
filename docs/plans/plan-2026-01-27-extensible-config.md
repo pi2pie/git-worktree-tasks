@@ -33,7 +33,7 @@ Ship an extensible config system beyond theme, prioritizing low-risk defaults an
 - [x] Add `merge_mode` enum and enforce exclusivity across CLI flags.
 
 ### Phase 3: Verification & Docs
-- [ ] Add tests for config resolution (env/project/user) and merge-mode validation.
+- [x] Add tests for config resolution (env/project/user) and merge-mode validation.
 - [ ] Update examples and README config section.
 - [ ] Verify related docs status and update as phases complete:
   - [ ] Plan status aligns with phase completion.
