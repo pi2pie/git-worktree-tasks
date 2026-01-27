@@ -210,7 +210,7 @@ func Load() (Config, error) {
 	if err := applyProjectConfig(&cfg, &flags); err != nil {
 		return cfg, err
 	}
-	if err := applyEnvConfig(&cfg, &flags); err != nil {
+	if err := applyEnvConfig(&cfg); err != nil {
 		return cfg, err
 	}
 
@@ -243,24 +243,23 @@ func applyUserConfig(cfg *Config, flags *gridFlags) error {
 func applyProjectConfig(cfg *Config, flags *gridFlags) error {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return err
+		return fmt.Errorf("get working directory: %w", err)
 	}
-	primaryPath := filepath.Join(cwd, projectConfigPrimary)
-	file, ok, err := loadConfigFile(primaryPath)
-	if err != nil {
-		return err
+
+	paths := []string{
+		filepath.Join(cwd, projectConfigPrimary),
+		filepath.Join(cwd, projectConfigFallback),
 	}
-	if ok {
-		applyConfig(cfg, flags, file)
-		return nil
-	}
-	fallbackPath := filepath.Join(cwd, projectConfigFallback)
-	file, ok, err = loadConfigFile(fallbackPath)
-	if err != nil {
-		return err
-	}
-	if ok {
-		applyConfig(cfg, flags, file)
+
+	for _, path := range paths {
+		file, ok, err := loadConfigFile(path)
+		if err != nil {
+			return err
+		}
+		if ok {
+			applyConfig(cfg, flags, file)
+			return nil
+		}
 	}
 	return nil
 }
@@ -280,7 +279,7 @@ func loadConfigFile(path string) (loadedConfigFile, bool, error) {
 	return cfg, true, nil
 }
 
-func applyEnvConfig(cfg *Config, flags *gridFlags) error {
+func applyEnvConfig(cfg *Config) error {
 	if name, ok := envString(envThemeName); ok {
 		cfg.Theme.Name = name
 	}
