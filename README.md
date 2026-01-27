@@ -39,6 +39,7 @@ gwtt cleanup "my-feature"
 - [Output Formats & Piping](#output-formats--piping)
 - [Development](#development)
 - [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
@@ -530,6 +531,12 @@ source ~/.bashrc   # Bash
 source ~/.zshrc    # Zsh
 exec fish          # Fish
 ```
+
+---
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](https://github.com/pi2pie/git-worktree-tasks/blob/main/LICENSE) file for details.
 
 ---
 

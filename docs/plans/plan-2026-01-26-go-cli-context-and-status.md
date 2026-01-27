@@ -1,7 +1,8 @@
 ---
 title: "Go CLI context propagation and status robustness"
 date: 2026-01-26
-status: draft
+status: completed
+modified-date: 2026-01-27
 agent: codex
 ---
 
@@ -29,10 +30,10 @@ Improve CLI correctness and UX by propagating contexts, making dry-run output re
 4) Add or update tests to cover the new behavior (as needed).
 
 ## Task Checklist
-- [ ] Propagate `cmd.Context()` through CLI commands and `runGit`.
-- [ ] Add git command formatting helper for dry-run/error output.
-- [ ] Handle `rev-list` parsing errors explicitly in `worktree.Status`.
-- [ ] Update/add tests for context usage and status parsing behavior.
+- [x] Propagate `cmd.Context()` through CLI commands and `runGit`.
+- [x] Add git command formatting helper for dry-run/error output.
+- [x] Handle `rev-list` parsing errors explicitly in `worktree.Status`.
+- [x] Update/add tests for context usage and status parsing behavior.
 
 ## Related Jobs
 - docs/plans/jobs/2026-01-26-cli-context-and-status.md
