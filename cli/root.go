@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.0.9"
+var Version = "0.1.0-alpha.1"
 
 var (
 	errCanceled     = errors.New("git worktree task process canceled")
@@ -84,20 +84,25 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 			}
 			return errThemesListed
 		}
+		cfg, err := config.Load()
+		if err != nil {
+			return err
+		}
+		cmd.SetContext(withConfig(cmd.Context(), &cfg))
 		themeName := state.theme
 		if !cmd.Flags().Changed("theme") {
-			resolvedTheme, err := config.ResolveThemeName()
-			if err != nil {
-				return err
-			}
-			if strings.TrimSpace(resolvedTheme) != "" {
-				themeName = resolvedTheme
+			if strings.TrimSpace(cfg.Theme.Name) != "" {
+				themeName = cfg.Theme.Name
 			}
 		}
 		if err := ui.SetTheme(themeName); err != nil {
 			return err
 		}
-		ui.SetColorEnabled(!state.noColor)
+		colorEnabled := cfg.UI.ColorEnabled
+		if cmd.Flags().Changed("nocolor") {
+			colorEnabled = !state.noColor
+		}
+		ui.SetColorEnabled(colorEnabled)
 		return nil
 	}
 

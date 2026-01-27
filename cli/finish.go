@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
 	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
@@ -32,6 +33,28 @@ func newFinishCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			if cfg, ok := configFromContext(cmd.Context()); ok {
+				if !cmd.Flags().Changed("yes") {
+					opts.yes = !cfg.Finish.Confirm
+				}
+				if !cmd.Flags().Changed("cleanup") {
+					opts.cleanup = cfg.Finish.Cleanup
+				}
+				if !cmd.Flags().Changed("remove-worktree") {
+					opts.removeWorktree = cfg.Finish.RemoveWorktree
+				}
+				if !cmd.Flags().Changed("remove-branch") {
+					opts.removeBranch = cfg.Finish.RemoveBranch
+				}
+				if !cmd.Flags().Changed("force-branch") {
+					opts.forceBranch = cfg.Finish.ForceBranch
+				}
+				if !cmd.Flags().Changed("no-ff") && !cmd.Flags().Changed("squash") && !cmd.Flags().Changed("rebase") {
+					if err := applyMergeMode(opts, cfg.Finish.MergeMode); err != nil {
+						return err
+					}
+				}
+			}
 
 			repoRoot, err := repoRoot(ctx, runner)
 			if err != nil {
@@ -42,11 +65,18 @@ func newFinishCommand() *cobra.Command {
 				return err
 			}
 
-			if opts.squash && opts.rebase {
-				return fmt.Errorf("--squash and --rebase cannot be used together")
+			strategyCount := 0
+			if opts.noFF {
+				strategyCount++
 			}
-			if opts.noFF && opts.rebase {
-				return fmt.Errorf("--no-ff and --rebase cannot be used together")
+			if opts.squash {
+				strategyCount++
+			}
+			if opts.rebase {
+				strategyCount++
+			}
+			if strategyCount > 1 {
+				return fmt.Errorf("merge strategies are mutually exclusive: choose only one of --no-ff, --squash, --rebase")
 			}
 
 			task := worktree.SlugifyTask(args[0])
@@ -151,6 +181,25 @@ func newFinishCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
 
 	return cmd
+}
+
+func applyMergeMode(opts *finishOptions, mode string) error {
+	value := strings.ToLower(strings.TrimSpace(mode))
+	switch value {
+	case "", "ff":
+		return nil
+	case "no-ff":
+		opts.noFF = true
+		return nil
+	case "squash":
+		opts.squash = true
+		return nil
+	case "rebase":
+		opts.rebase = true
+		return nil
+	default:
+		return fmt.Errorf("unsupported merge_mode: %s", mode)
+	}
 }
 
 func runGit(ctx context.Context, cmd *cobra.Command, dryRun bool, runner git.Runner, args ...string) error {

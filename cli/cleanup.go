@@ -28,6 +28,23 @@ func newCleanupCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			if cfg, ok := configFromContext(cmd.Context()); ok {
+				if !cmd.Flags().Changed("yes") {
+					opts.yes = !cfg.Cleanup.Confirm
+				}
+				if !cmd.Flags().Changed("remove-worktree") {
+					opts.removeWorktree = cfg.Cleanup.RemoveWorktree
+				}
+				if !cmd.Flags().Changed("remove-branch") {
+					opts.removeBranch = cfg.Cleanup.RemoveBranch
+				}
+				if !cmd.Flags().Changed("worktree-only") {
+					opts.worktreeOnly = cfg.Cleanup.WorktreeOnly
+				}
+				if !cmd.Flags().Changed("force-branch") {
+					opts.forceBranch = cfg.Cleanup.ForceBranch
+				}
+			}
 			repoRoot, err := repoRoot(ctx, runner)
 			if err != nil {
 				return err

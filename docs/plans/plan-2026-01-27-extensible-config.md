@@ -27,10 +27,10 @@ Ship an extensible config system beyond theme, prioritizing low-risk defaults an
 - [x] Document env/config/flag precedence for new settings.
 
 ### Phase 2: Implementation
-- [ ] Add config loader with precedence: flags > env > project > user > defaults.
-- [ ] Introduce `GWTT_COLOR` env (mirrors `--nocolor`, inverted boolean).
-- [ ] Implement config-backed defaults for list/status output, grid, absolute path, confirm toggles.
-- [ ] Add `merge_mode` enum and enforce exclusivity across CLI flags.
+- [x] Add config loader with precedence: flags > env > project > user > defaults.
+- [x] Introduce `GWTT_COLOR` env (mirrors `--nocolor`, inverted boolean).
+- [x] Implement config-backed defaults for list/status output, grid, absolute path, confirm toggles.
+- [x] Add `merge_mode` enum and enforce exclusivity across CLI flags.
 
 ### Phase 3: Verification & Docs
 - [ ] Add tests for config resolution (env/project/user) and merge-mode validation.
