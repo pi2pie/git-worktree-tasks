@@ -54,6 +54,11 @@ func newListCommand() *cobra.Command {
 						return err
 					}
 					codexWorktrees = codexWorktreesRoot(codexHome)
+				} else {
+					if home, err := codexHomeDir(); err == nil {
+						codexHome = home
+						codexWorktrees = codexWorktreesRoot(codexHome)
+					}
 				}
 				if !cmd.Flags().Changed("output") {
 					opts.output = cfg.List.Output
@@ -118,19 +123,33 @@ func newListCommand() *cobra.Command {
 			for _, wt := range worktrees {
 				branch := strings.TrimPrefix(wt.Branch, "refs/heads/")
 				task := "-"
+				var codexRel string
+				var wtAbs string
+				var err error
 				if mode == modeCodex {
-					wtAbs, err := worktree.NormalizePath(repoRoot, wt.Path)
+					wtAbs, err = worktree.NormalizePath(repoRoot, wt.Path)
 					if err != nil {
 						return err
 					}
-					if !isUnderDir(codexWorktrees, wtAbs) {
+					opaqueID, rel, ok := codexWorktreeInfo(codexWorktrees, wtAbs)
+					if !ok {
 						continue
 					}
-					task = filepath.Base(wtAbs)
+					task = opaqueID
+					codexRel = rel
 					if branch == "" {
 						branch = "detached"
 					}
 				} else {
+					if codexWorktrees != "" {
+						wtAbs, err = worktree.NormalizePath(repoRoot, wt.Path)
+						if err != nil {
+							return err
+						}
+						if _, _, ok := codexWorktreeInfo(codexWorktrees, wtAbs); ok {
+							continue
+						}
+					}
 					task, _ = worktree.TaskFromPath(repo, wt.Path)
 					if task == "" {
 						task = "-"
@@ -142,6 +161,12 @@ func newListCommand() *cobra.Command {
 					Path:    displayPathForMode(repoRoot, wt.Path, opts.abs, mode, codexHome),
 					Present: true,
 					Head:    worktree.ShortHash(wt.Head, shortHashLen),
+				}
+				if mode == modeCodex && opts.output == "raw" && field == "path" {
+					if codexRel == "" {
+						return fmt.Errorf("unable to derive codex worktree relative path for %q", wt.Path)
+					}
+					row.Path = filepath.Join("worktrees", codexRel)
 				}
 				if query != "" {
 					if mode == modeCodex {

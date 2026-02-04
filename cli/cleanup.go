@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
@@ -115,13 +114,11 @@ func newCleanupCommand() *cobra.Command {
 					if err != nil {
 						return err
 					}
-					if !isUnderDir(codexWorktrees, wtAbs) {
+					opaqueID, _, ok := codexWorktreeInfo(codexWorktrees, wtAbs)
+					if !ok || opaqueID != query {
 						continue
 					}
-					if filepath.Base(wtAbs) != query {
-						continue
-					}
-					resolvedPath = wt.Path
+					resolvedPath = wtAbs
 					worktreeExists = true
 					break
 				}

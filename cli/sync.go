@@ -161,10 +161,8 @@ func resolveCodexWorktreePath(ctx context.Context, runner git.Runner, repoRoot, 
 		if err != nil {
 			return "", false, err
 		}
-		if !isUnderDir(codexWorktreesRoot, wtAbs) {
-			continue
-		}
-		if filepath.Base(wtAbs) != opaqueID {
+		id, _, ok := codexWorktreeInfo(codexWorktreesRoot, wtAbs)
+		if !ok || id != opaqueID {
 			continue
 		}
 		return wtAbs, true, nil

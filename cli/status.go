@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -62,6 +61,11 @@ func newStatusCommand() *cobra.Command {
 						return err
 					}
 					codexWorktrees = codexWorktreesRoot(codexHome)
+				} else {
+					if home, err := codexHomeDir(); err == nil {
+						codexHome = home
+						codexWorktrees = codexWorktreesRoot(codexHome)
+					}
 				}
 				if !cmd.Flags().Changed("output") {
 					opts.output = cfg.Status.Output
@@ -148,10 +152,11 @@ func newStatusCommand() *cobra.Command {
 					if err != nil {
 						return err
 					}
-					if !isUnderDir(codexWorktrees, wtAbs) {
+					opaqueID, _, ok := codexWorktreeInfo(codexWorktrees, wtAbs)
+					if !ok {
 						continue
 					}
-					task = filepath.Base(wtAbs)
+					task = opaqueID
 					if branch == "" {
 						branch = "detached"
 					}
@@ -159,6 +164,16 @@ func newStatusCommand() *cobra.Command {
 						continue
 					}
 				} else {
+					if codexWorktrees != "" {
+						var err error
+						wtAbs, err = worktree.NormalizePath(repoRoot, wt.Path)
+						if err != nil {
+							return err
+						}
+						if _, _, ok := codexWorktreeInfo(codexWorktrees, wtAbs); ok {
+							continue
+						}
+					}
 					task, _ = worktree.TaskFromPath(repo, wt.Path)
 					if task == "" {
 						task = "-"
@@ -176,6 +191,7 @@ func newStatusCommand() *cobra.Command {
 					return err
 				}
 				if wtAbs == "" {
+					var err error
 					wtAbs, err = worktree.NormalizePath(repoRoot, wt.Path)
 					if err != nil {
 						return err

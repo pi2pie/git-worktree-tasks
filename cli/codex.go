@@ -40,3 +40,25 @@ func codexHomeDir() (string, error) {
 func codexWorktreesRoot(codexHome string) string {
 	return filepath.Join(codexHome, "worktrees")
 }
+
+func codexWorktreeInfo(codexWorktreesRoot, worktreePath string) (opaqueID, relative string, ok bool) {
+	if strings.TrimSpace(codexWorktreesRoot) == "" || strings.TrimSpace(worktreePath) == "" {
+		return "", "", false
+	}
+	if !isUnderDir(codexWorktreesRoot, worktreePath) {
+		return "", "", false
+	}
+	rel, err := filepath.Rel(codexWorktreesRoot, worktreePath)
+	if err != nil {
+		return "", "", false
+	}
+	rel = filepath.Clean(rel)
+	if rel == "." || rel == string(filepath.Separator) {
+		return "", "", false
+	}
+	parts := strings.Split(rel, string(filepath.Separator))
+	if len(parts) == 0 || strings.TrimSpace(parts[0]) == "" || parts[0] == "." {
+		return "", "", false
+	}
+	return parts[0], rel, true
+}
