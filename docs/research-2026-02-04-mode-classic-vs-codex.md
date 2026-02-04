@@ -130,17 +130,22 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
 - Scope: only delete the on-disk directory at `$CODEX_HOME/worktrees/<opaque-id>` (free disk; do not touch classic paths).
 - Since pinned/sidebar/thread linkage is not reliably detectable without reading Codex App state:
   - Always show a prominent warning (“may break pinned/sidebar restore expectations”) and require an extra confirmation (skippable with `--yes`).
-  - Treat restore as best-effort: `gwtt` cannot guarantee a snapshot exists before manual deletion.
+  - Treat restore as best-effort: Codex saves a snapshot **before its own cleanup**; `gwtt`-initiated deletion cannot guarantee a snapshot exists unless Codex already took one.
 
 ### `status` metadata addition: `modified_time`
 - Add `modified_time` derived from filesystem `mtime` of the worktree directory.
 - Format: RFC3339 UTC for JSON/CSV; table output prints the same string.
 - No date-format config in the first iteration.
 
+### Raw output (codex mode)
+- `--output raw` should return a **composable path** (relative to `$CODEX_HOME`), e.g. `worktrees/bf15/git-worktree-tasks`.
+- Display output (table/text) should continue to render `$CODEX_HOME/...` for readability.
+
 ## Open Questions (Remaining)
 - Can we (safely) detect any Codex cleanup-restriction signals from disk without coupling `gwtt` to Codex’s internal storage formats?
+  - Likely no; default to warnings + a second confirmation (skippable with `--yes`) for codex cleanup.
 - What is the most user-friendly confirmation wording for “overwrite” (sync) and “yolo delete” (cleanup) that still prevents accidents?
-- Should `--output raw` in codex mode return **relative paths** (for composability) while display output uses `$CODEX_HOME/...`?
+  - Pending: depends on user confidence that Codex can restore a worktree after manual deletion (docs only guarantee snapshots before **Codex-managed** cleanup).
 
 ## Notes
 - Restoration remains out of scope: keep to create/sync/list/status only for now; a future `restore` likely needs to integrate with Codex App snapshot state.
