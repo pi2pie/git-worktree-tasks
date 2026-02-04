@@ -2,22 +2,31 @@
 .TH "GWTT" "1" "Feb 2026" "gwtt" "Git Worktree Tasks Manual"
 
 .SH NAME
-gwtt - Task-based git worktree helper
+gwtt-apply - Apply changes between a Codex worktree and the local checkout
 
 
 .SH SYNOPSIS
-\fBgwtt [flags]\fP
+\fBgwtt apply <task> [flags]\fP
 
 
 .SH DESCRIPTION
-Create, manage, and clean up git worktrees based on task names.
+Apply changes between a Codex worktree and the local checkout
 
 
 .SH OPTIONS
-\fB-h\fP, \fB--help\fP[=false]
-	help for gwtt
+\fB--dry-run\fP[=false]
+	show git commands without executing
 
 .PP
+\fB-h\fP, \fB--help\fP[=false]
+	help for apply
+
+.PP
+\fB--yes\fP[=false]
+	skip confirmation prompts
+
+
+.SH OPTIONS INHERITED FROM PARENT COMMANDS
 \fB--mode\fP="classic"
 	execution mode: classic or codex
 
@@ -35,4 +44,4 @@ Create, manage, and clean up git worktrees based on task names.
 
 
 .SH SEE ALSO
-\fBgwtt-apply(1)\fP, \fBgwtt-cleanup(1)\fP, \fBgwtt-create(1)\fP, \fBgwtt-finish(1)\fP, \fBgwtt-list(1)\fP, \fBgwtt-status(1)\fP
+\fBgwtt(1)\fP

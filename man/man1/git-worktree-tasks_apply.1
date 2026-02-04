@@ -2,22 +2,31 @@
 .TH "GIT-WORKTREE-TASKS" "1" "Feb 2026" "git-worktree-tasks" "Git Worktree Tasks Manual"
 
 .SH NAME
-git-worktree-tasks - Task-based git worktree helper
+git-worktree-tasks-apply - Apply changes between a Codex worktree and the local checkout
 
 
 .SH SYNOPSIS
-\fBgit-worktree-tasks [flags]\fP
+\fBgit-worktree-tasks apply <task> [flags]\fP
 
 
 .SH DESCRIPTION
-Create, manage, and clean up git worktrees based on task names.
+Apply changes between a Codex worktree and the local checkout
 
 
 .SH OPTIONS
-\fB-h\fP, \fB--help\fP[=false]
-	help for git-worktree-tasks
+\fB--dry-run\fP[=false]
+	show git commands without executing
 
 .PP
+\fB-h\fP, \fB--help\fP[=false]
+	help for apply
+
+.PP
+\fB--yes\fP[=false]
+	skip confirmation prompts
+
+
+.SH OPTIONS INHERITED FROM PARENT COMMANDS
 \fB--mode\fP="classic"
 	execution mode: classic or codex
 
@@ -35,4 +44,4 @@ Create, manage, and clean up git worktrees based on task names.
 
 
 .SH SEE ALSO
-\fBgit-worktree-tasks-apply(1)\fP, \fBgit-worktree-tasks-cleanup(1)\fP, \fBgit-worktree-tasks-create(1)\fP, \fBgit-worktree-tasks-finish(1)\fP, \fBgit-worktree-tasks-list(1)\fP, \fBgit-worktree-tasks-status(1)\fP
+\fBgit-worktree-tasks(1)\fP

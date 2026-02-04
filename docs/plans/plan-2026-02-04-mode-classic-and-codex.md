@@ -2,7 +2,7 @@
 title: "Mode flag: classic and codex"
 date: 2026-02-04
 modified-date: 2026-02-04
-status: active
+status: completed
 agent: codex
 ---
 
@@ -71,17 +71,17 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 - [x] Add tests for codex cleanup scope restriction + confirmation flow.
 
 ### Phase 4: README / CLI Docs Update
-- [ ] Update `README.md`:
-  - [ ] Document `--mode`, `GWTT_MODE`, and config `mode`.
-  - [ ] Add codex-mode usage examples for `list/status/apply/cleanup`.
-  - [ ] Update `## Notes` “Global flags” list to include `--mode`.
-  - [ ] Document `modified_time` in `status` outputs (and the fixed date format).
-- [ ] If applicable, update any man/help text sources under `man/` to reflect new commands/flags.
+- [x] Update `README.md`:
+  - [x] Document `--mode`, `GWTT_MODE`, and config `mode`.
+  - [x] Add codex-mode usage examples for `list/status/apply/cleanup`.
+  - [x] Update `## Notes` “Global flags” list to include `--mode`.
+  - [x] Document `modified_time` in `status` outputs (and the fixed date format).
+- [x] If applicable, update any man/help text sources under `man/` to reflect new commands/flags.
 
 ### Phase 5: Verify Doc Statuses
-- [ ] Ensure this plan’s `status` matches the actual phase progress (`active` -> `completed` when done).
-- [ ] Update the research doc’s `status` to `completed` once decisions are implemented and verified.
-- [ ] Ensure any schema/doc updates have consistent status and dates (`modified-date` as needed).
+- [x] Ensure this plan’s `status` matches the actual phase progress (`active` -> `completed` when done).
+- [x] Update the research doc’s `status` to `completed` once decisions are implemented and verified.
+- [x] Ensure any schema/doc updates have consistent status and dates (`modified-date` as needed).
 
 ## Acceptance Criteria
 - Default behavior (no `--mode`, no `GWTT_MODE`, no config) remains unchanged.
