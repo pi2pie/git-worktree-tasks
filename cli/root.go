@@ -47,6 +47,7 @@ type runState struct {
 	exitOnWarning bool
 	noColor       bool
 	theme         string
+	mode          string
 	listThemes    bool
 }
 
@@ -76,6 +77,7 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 	cmd.SetErr(os.Stderr)
 	cmd.PersistentFlags().BoolVar(&state.noColor, "nocolor", false, "disable color output")
 	cmd.PersistentFlags().StringVar(&state.theme, "theme", ui.DefaultThemeName(), "color theme: "+strings.Join(ui.ThemeNames(), ", "))
+	cmd.PersistentFlags().StringVar(&state.mode, "mode", "classic", "execution mode: classic or codex")
 	cmd.PersistentFlags().BoolVar(&state.listThemes, "themes", false, "print available themes and exit")
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if state.listThemes {
@@ -88,6 +90,15 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 		if err != nil {
 			return err
 		}
+		mode := cfg.Mode
+		if cmd.Flags().Changed("mode") {
+			mode = state.mode
+		}
+		mode, err = normalizeMode(mode)
+		if err != nil {
+			return err
+		}
+		cfg.Mode = mode
 		cmd.SetContext(withConfig(cmd.Context(), &cfg))
 		themeName := state.theme
 		if !cmd.Flags().Changed("theme") {
@@ -112,6 +123,7 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 		newCleanupCommand(),
 		newListCommand(),
 		newStatusCommand(),
+		newSyncCommand(),
 		newTUICommand(),
 	)
 

@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
 	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
@@ -28,7 +30,19 @@ func newCleanupCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			mode := modeClassic
+			var codexHome string
+			var codexWorktrees string
 			if cfg, ok := configFromContext(cmd.Context()); ok {
+				mode = cfg.Mode
+				if mode == modeCodex {
+					var err error
+					codexHome, err = codexHomeDir()
+					if err != nil {
+						return err
+					}
+					codexWorktrees = codexWorktreesRoot(codexHome)
+				}
 				if !cmd.Flags().Changed("yes") {
 					opts.yes = !cfg.Cleanup.Confirm
 				}
@@ -56,13 +70,28 @@ func newCleanupCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			task := worktree.SlugifyTask(args[0])
-			path := worktree.WorktreePath(repoRoot, repo, task)
-			branch := task
+			task := args[0]
+			if mode != modeCodex {
+				task = worktree.SlugifyTask(args[0])
+			}
+			path := ""
+			branch := ""
+			if mode != modeCodex {
+				path = worktree.WorktreePath(repoRoot, repo, task)
+				branch = task
+			}
 
 			if opts.worktreeOnly {
 				opts.removeWorktree = true
 				opts.removeBranch = false
+			}
+
+			if mode == modeCodex {
+				if cmd.Flags().Changed("remove-branch") && opts.removeBranch {
+					return fmt.Errorf("branch cleanup is not supported in --mode=codex")
+				}
+				opts.removeBranch = false
+				opts.forceBranch = false
 			}
 
 			if !opts.removeWorktree && !opts.removeBranch {
@@ -76,40 +105,62 @@ func newCleanupCommand() *cobra.Command {
 
 			resolvedPath := path
 			worktreeExists := false
-			branchRef := "refs/heads/" + branch
-			repoRootPath, err := worktree.NormalizePath(repoRoot, repoRoot)
-			if err != nil {
-				return err
-			}
-			for _, wt := range worktrees {
-				if wt.Branch != branchRef {
-					continue
+			if mode == modeCodex {
+				query := strings.TrimSpace(task)
+				if query == "" {
+					return fmt.Errorf("task query cannot be empty")
 				}
-				wtPath, err := worktree.NormalizePath(repoRoot, wt.Path)
-				if err != nil {
-					return err
+				for _, wt := range worktrees {
+					wtAbs, err := worktree.NormalizePath(repoRoot, wt.Path)
+					if err != nil {
+						return err
+					}
+					if !isUnderDir(codexWorktrees, wtAbs) {
+						continue
+					}
+					if filepath.Base(wtAbs) != query {
+						continue
+					}
+					resolvedPath = wt.Path
+					worktreeExists = true
+					break
 				}
-				if wtPath == repoRootPath {
-					continue
-				}
-				resolvedPath = wt.Path
-				worktreeExists = true
-				break
-			}
-
-			if !worktreeExists {
-				targetPath, err := worktree.NormalizePath(repoRoot, path)
+			} else {
+				branchRef := "refs/heads/" + branch
+				repoRootPath, err := worktree.NormalizePath(repoRoot, repoRoot)
 				if err != nil {
 					return err
 				}
 				for _, wt := range worktrees {
+					if wt.Branch != branchRef {
+						continue
+					}
 					wtPath, err := worktree.NormalizePath(repoRoot, wt.Path)
 					if err != nil {
 						return err
 					}
-					if wtPath == targetPath {
-						worktreeExists = true
-						break
+					if wtPath == repoRootPath {
+						continue
+					}
+					resolvedPath = wt.Path
+					worktreeExists = true
+					break
+				}
+
+				if !worktreeExists {
+					targetPath, err := worktree.NormalizePath(repoRoot, path)
+					if err != nil {
+						return err
+					}
+					for _, wt := range worktrees {
+						wtPath, err := worktree.NormalizePath(repoRoot, wt.Path)
+						if err != nil {
+							return err
+						}
+						if wtPath == targetPath {
+							worktreeExists = true
+							break
+						}
 					}
 				}
 			}
@@ -154,6 +205,18 @@ func newCleanupCommand() *cobra.Command {
 					}
 					if !ok {
 						return errCanceled
+					}
+					if mode == modeCodex {
+						if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.WarningStyle.Render("warning: codex-mode deletion cannot verify pinned/sidebar/thread linkage; restore is best-effort")); err != nil {
+							return err
+						}
+						ok, err := confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), "Remove Codex worktree anyway?")
+						if err != nil {
+							return err
+						}
+						if !ok {
+							return errCanceled
+						}
 					}
 				}
 				if err := runGit(ctx, cmd, opts.dryRun, runner, "-C", repoRoot, "worktree", "remove", resolvedPath); err != nil {

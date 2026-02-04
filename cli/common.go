@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -33,6 +34,44 @@ func displayPath(repoRoot, path string, absolute bool) string {
 		return clean
 	}
 	return rel
+}
+
+func displayPathForMode(repoRoot, path string, absolute bool, mode string, codexHome string) string {
+	if absolute {
+		return displayPath(repoRoot, path, true)
+	}
+	if mode != modeCodex {
+		return displayPath(repoRoot, path, false)
+	}
+	if strings.TrimSpace(codexHome) == "" {
+		return displayPath(repoRoot, path, false)
+	}
+	absPath, err := worktree.NormalizePath(repoRoot, path)
+	if err != nil {
+		return displayPath(repoRoot, path, false)
+	}
+	codexHomeAbs := filepath.Clean(codexHome)
+	if !isUnderDir(codexHomeAbs, absPath) {
+		return displayPath(repoRoot, absPath, false)
+	}
+	rel, err := filepath.Rel(codexHomeAbs, absPath)
+	if err != nil {
+		return displayPath(repoRoot, absPath, false)
+	}
+	return filepath.Join("$CODEX_HOME", rel)
+}
+
+func isUnderDir(root, path string) bool {
+	root = filepath.Clean(root)
+	path = filepath.Clean(path)
+	if path == root {
+		return true
+	}
+	sep := string(os.PathSeparator)
+	if !strings.HasSuffix(root, sep) {
+		root += sep
+	}
+	return strings.HasPrefix(path, root)
 }
 
 func mainWorktreePathFromCommonDir(repoRoot, commonDir string) string {

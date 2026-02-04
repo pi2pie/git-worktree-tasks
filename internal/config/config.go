@@ -11,9 +11,11 @@ import (
 
 const (
 	envColorEnabled = "GWTT_COLOR"
+	envMode         = "GWTT_MODE"
 )
 
 type Config struct {
+	Mode    string
 	Theme   ThemeConfig
 	UI      UIConfig
 	Table   TableConfig
@@ -81,6 +83,7 @@ type CleanupConfig struct {
 
 func DefaultConfig() Config {
 	return Config{
+		Mode: "classic",
 		Theme: ThemeConfig{
 			Name: "default",
 		},
@@ -130,6 +133,7 @@ func DefaultConfig() Config {
 }
 
 type loadedConfigFile struct {
+	Mode    *string           `toml:"mode"`
 	Theme   themeConfigFile   `toml:"theme"`
 	UI      uiConfigFile      `toml:"ui"`
 	Table   tableConfigFile   `toml:"table"`
@@ -283,6 +287,9 @@ func applyEnvConfig(cfg *Config) error {
 	if name, ok := envString(envThemeName); ok {
 		cfg.Theme.Name = name
 	}
+	if mode, ok := envString(envMode); ok {
+		cfg.Mode = mode
+	}
 	if enabled, ok, err := envBool(envColorEnabled); err != nil {
 		return err
 	} else if ok {
@@ -323,6 +330,9 @@ func envBool(key string) (bool, bool, error) {
 }
 
 func applyConfig(cfg *Config, flags *gridFlags, file loadedConfigFile) {
+	if mode, ok := trimString(file.Mode); ok {
+		cfg.Mode = mode
+	}
 	if name, ok := trimString(file.Theme.Name); ok {
 		cfg.Theme.Name = name
 	}

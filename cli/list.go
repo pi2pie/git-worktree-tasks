@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -41,7 +42,19 @@ func newListCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			mode := modeClassic
+			var codexHome string
+			var codexWorktrees string
 			if cfg, ok := configFromContext(cmd.Context()); ok {
+				mode = cfg.Mode
+				if mode == modeCodex {
+					var err error
+					codexHome, err = codexHomeDir()
+					if err != nil {
+						return err
+					}
+					codexWorktrees = codexWorktreesRoot(codexHome)
+				}
 				if !cmd.Flags().Changed("output") {
 					opts.output = cfg.List.Output
 				}
@@ -71,9 +84,17 @@ func newListCommand() *cobra.Command {
 			}
 			var query string
 			if len(args) == 1 {
-				query, err = normalizeTaskQuery(args[0])
-				if err != nil {
-					return err
+				if mode == modeCodex {
+					query = strings.TrimSpace(args[0])
+					if query == "" {
+						return fmt.Errorf("task query cannot be empty")
+					}
+					opts.strict = true
+				} else {
+					query, err = normalizeTaskQuery(args[0])
+					if err != nil {
+						return err
+					}
 				}
 			}
 			if opts.output == "raw" && query == "" && opts.branch == "" {
@@ -96,19 +117,40 @@ func newListCommand() *cobra.Command {
 			rows := make([]listRow, 0, len(worktrees))
 			for _, wt := range worktrees {
 				branch := strings.TrimPrefix(wt.Branch, "refs/heads/")
-				task, _ := worktree.TaskFromPath(repo, wt.Path)
-				if task == "" {
-					task = "-"
+				task := "-"
+				if mode == modeCodex {
+					wtAbs, err := worktree.NormalizePath(repoRoot, wt.Path)
+					if err != nil {
+						return err
+					}
+					if !isUnderDir(codexWorktrees, wtAbs) {
+						continue
+					}
+					task = filepath.Base(wtAbs)
+					if branch == "" {
+						branch = "detached"
+					}
+				} else {
+					task, _ = worktree.TaskFromPath(repo, wt.Path)
+					if task == "" {
+						task = "-"
+					}
 				}
 				row := listRow{
 					Task:    task,
 					Branch:  branch,
-					Path:    displayPath(repoRoot, wt.Path, opts.abs),
+					Path:    displayPathForMode(repoRoot, wt.Path, opts.abs, mode, codexHome),
 					Present: true,
 					Head:    worktree.ShortHash(wt.Head, shortHashLen),
 				}
-				if query != "" && !matchesTask(row.Task, query, opts.strict) {
-					continue
+				if query != "" {
+					if mode == modeCodex {
+						if row.Task != query {
+							continue
+						}
+					} else if !matchesTask(row.Task, query, opts.strict) {
+						continue
+					}
 				}
 				if opts.branch != "" && row.Branch != opts.branch {
 					continue
@@ -116,7 +158,7 @@ func newListCommand() *cobra.Command {
 				rows = append(rows, row)
 			}
 
-			if opts.output == "raw" && len(rows) == 0 {
+			if mode != modeCodex && opts.output == "raw" && len(rows) == 0 {
 				fallbackBranch := opts.branch
 				if fallbackBranch == "" {
 					fallbackBranch = query

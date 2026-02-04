@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
@@ -26,15 +29,16 @@ type statusOptions struct {
 }
 
 type statusRow struct {
-	Task       string `json:"task"`
-	Branch     string `json:"branch"`
-	Path       string `json:"path"`
-	Base       string `json:"base"`
-	Target     string `json:"target"`
-	LastCommit string `json:"last_commit"`
-	Dirty      bool   `json:"dirty"`
-	Ahead      int    `json:"ahead"`
-	Behind     int    `json:"behind"`
+	Task         string `json:"task"`
+	Branch       string `json:"branch"`
+	Path         string `json:"path"`
+	ModifiedTime string `json:"modified_time"`
+	Base         string `json:"base"`
+	Target       string `json:"target"`
+	LastCommit   string `json:"last_commit"`
+	Dirty        bool   `json:"dirty"`
+	Ahead        int    `json:"ahead"`
+	Behind       int    `json:"behind"`
 }
 
 func newStatusCommand() *cobra.Command {
@@ -46,7 +50,19 @@ func newStatusCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			mode := modeClassic
+			var codexHome string
+			var codexWorktrees string
 			if cfg, ok := configFromContext(cmd.Context()); ok {
+				mode = cfg.Mode
+				if mode == modeCodex {
+					var err error
+					codexHome, err = codexHomeDir()
+					if err != nil {
+						return err
+					}
+					codexWorktrees = codexWorktreesRoot(codexHome)
+				}
 				if !cmd.Flags().Changed("output") {
 					opts.output = cfg.Status.Output
 				}
@@ -73,15 +89,31 @@ func newStatusCommand() *cobra.Command {
 			}
 			var query string
 			if len(args) == 1 {
-				query, err = normalizeTaskQuery(args[0])
-				if err != nil {
-					return err
+				if mode == modeCodex {
+					query = strings.TrimSpace(args[0])
+					if query == "" {
+						return fmt.Errorf("task query cannot be empty")
+					}
+					opts.strict = true
+				} else {
+					query, err = normalizeTaskQuery(args[0])
+					if err != nil {
+						return err
+					}
 				}
 			}
 			if opts.task != "" {
-				query, err = normalizeTaskQuery(opts.task)
-				if err != nil {
-					return err
+				if mode == modeCodex {
+					query = strings.TrimSpace(opts.task)
+					if query == "" {
+						return fmt.Errorf("task query cannot be empty")
+					}
+				} else {
+					query, err = normalizeTaskQuery(opts.task)
+					if err != nil {
+						return err
+					}
+					opts.strict = true
 				}
 				opts.strict = true
 			}
@@ -108,12 +140,32 @@ func newStatusCommand() *cobra.Command {
 			rows := make([]statusRow, 0, len(worktrees))
 			for _, wt := range worktrees {
 				branch := strings.TrimPrefix(wt.Branch, "refs/heads/")
-				task, _ := worktree.TaskFromPath(repo, wt.Path)
-				if task == "" {
-					task = "-"
-				}
-				if query != "" && !matchesTask(task, query, opts.strict) {
-					continue
+				task := "-"
+				var wtAbs string
+				if mode == modeCodex {
+					var err error
+					wtAbs, err = worktree.NormalizePath(repoRoot, wt.Path)
+					if err != nil {
+						return err
+					}
+					if !isUnderDir(codexWorktrees, wtAbs) {
+						continue
+					}
+					task = filepath.Base(wtAbs)
+					if branch == "" {
+						branch = "detached"
+					}
+					if query != "" && task != query {
+						continue
+					}
+				} else {
+					task, _ = worktree.TaskFromPath(repo, wt.Path)
+					if task == "" {
+						task = "-"
+					}
+					if query != "" && !matchesTask(task, query, opts.strict) {
+						continue
+					}
 				}
 				if opts.branch != "" && branch != opts.branch {
 					continue
@@ -123,21 +175,37 @@ func newStatusCommand() *cobra.Command {
 				if err != nil {
 					return err
 				}
+				if wtAbs == "" {
+					wtAbs, err = worktree.NormalizePath(repoRoot, wt.Path)
+					if err != nil {
+						return err
+					}
+				}
+				modified := ""
+				info, err := os.Stat(wtAbs)
+				if err != nil {
+					if !os.IsNotExist(err) {
+						return fmt.Errorf("stat worktree %s: %w", wtAbs, err)
+					}
+				} else {
+					modified = info.ModTime().UTC().Format(time.RFC3339)
+				}
 
 				rows = append(rows, statusRow{
-					Task:       task,
-					Branch:     branch,
-					Path:       displayPath(repoRoot, wt.Path, opts.abs),
-					Base:       statusInfo.Base,
-					Target:     target,
-					LastCommit: statusInfo.LastCommit,
-					Dirty:      statusInfo.Dirty,
-					Ahead:      statusInfo.Ahead,
-					Behind:     statusInfo.Behind,
+					Task:         task,
+					Branch:       branch,
+					Path:         displayPathForMode(repoRoot, wt.Path, opts.abs, mode, codexHome),
+					ModifiedTime: modified,
+					Base:         statusInfo.Base,
+					Target:       target,
+					LastCommit:   statusInfo.LastCommit,
+					Dirty:        statusInfo.Dirty,
+					Ahead:        statusInfo.Ahead,
+					Behind:       statusInfo.Behind,
 				})
 			}
 
-			if len(rows) == 0 {
+			if mode != modeCodex && len(rows) == 0 {
 				fallbackBranch := opts.branch
 				if fallbackBranch == "" {
 					fallbackBranch = query
@@ -155,16 +223,26 @@ func newStatusCommand() *cobra.Command {
 					if err != nil {
 						return err
 					}
+					modified := ""
+					info, err := os.Stat(path)
+					if err != nil {
+						if !os.IsNotExist(err) {
+							return fmt.Errorf("stat worktree %s: %w", path, err)
+						}
+					} else {
+						modified = info.ModTime().UTC().Format(time.RFC3339)
+					}
 					rows = append(rows, statusRow{
-						Task:       "-",
-						Branch:     branch,
-						Path:       displayPath(repoRoot, path, opts.abs),
-						Base:       statusInfo.Base,
-						Target:     target,
-						LastCommit: statusInfo.LastCommit,
-						Dirty:      statusInfo.Dirty,
-						Ahead:      statusInfo.Ahead,
-						Behind:     statusInfo.Behind,
+						Task:         "-",
+						Branch:       branch,
+						Path:         displayPath(repoRoot, path, opts.abs),
+						ModifiedTime: modified,
+						Base:         statusInfo.Base,
+						Target:       target,
+						LastCommit:   statusInfo.LastCommit,
+						Dirty:        statusInfo.Dirty,
+						Ahead:        statusInfo.Ahead,
+						Behind:       statusInfo.Behind,
 					})
 				}
 			}
@@ -192,6 +270,7 @@ func renderStatus(cmd *cobra.Command, format string, rows []statusRow, grid bool
 			{Header: "TASK", MinWidth: 6},
 			{Header: "BRANCH", MinWidth: 10, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.AccentStyle }},
 			{Header: "PATH", MinWidth: 16, Flexible: true, Truncate: true},
+			{Header: "MODIFIED", MinWidth: 10, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
 			{Header: "BASE", MinWidth: 8, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
 			{Header: "TARGET", MinWidth: 8, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
 			{Header: "LAST_COMMIT", MinWidth: 12, MaxWidth: 24, Flexible: true, Truncate: true, Style: func(value string) lipgloss.Style { return ui.MutedStyle }},
@@ -220,6 +299,7 @@ func renderStatus(cmd *cobra.Command, format string, rows []statusRow, grid bool
 				row.Task,
 				row.Branch,
 				row.Path,
+				row.ModifiedTime,
 				row.Base,
 				row.Target,
 				row.LastCommit,
@@ -242,7 +322,7 @@ func renderStatus(cmd *cobra.Command, format string, rows []statusRow, grid bool
 	case "csv":
 		writer := csv.NewWriter(cmd.OutOrStdout())
 		if err := writer.Write([]string{
-			"task", "branch", "path", "base", "target", "last_commit", "dirty", "ahead", "behind",
+			"task", "branch", "path", "modified_time", "base", "target", "last_commit", "dirty", "ahead", "behind",
 		}); err != nil {
 			return err
 		}
@@ -251,6 +331,7 @@ func renderStatus(cmd *cobra.Command, format string, rows []statusRow, grid bool
 				row.Task,
 				row.Branch,
 				row.Path,
+				row.ModifiedTime,
 				row.Base,
 				row.Target,
 				row.LastCommit,
