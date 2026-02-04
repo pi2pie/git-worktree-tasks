@@ -87,6 +87,7 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 ## Decisions
 - `create.path.format` must include `{task}` to preserve task discovery.
 - `merge_mode` is exclusive; only one strategy may be active at a time.
+- Codex-mode uses an `apply` command for hand-off changes; there are no config keys for it yet.
 - No config defaults for `create.base` or `status/finish.target`.
 
 ## Examples

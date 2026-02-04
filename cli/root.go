@@ -123,7 +123,7 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 		newCleanupCommand(),
 		newListCommand(),
 		newStatusCommand(),
-		newSyncCommand(),
+		newApplyCommand(),
 		newTUICommand(),
 	)
 

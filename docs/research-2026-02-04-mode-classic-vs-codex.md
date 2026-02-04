@@ -19,14 +19,15 @@ Define what a new global `--mode` flag should mean for this CLI, so we can suppo
 - **Paths are displayed** relative to the repo root by default; `--abs`/`--absolute-path` shows absolute paths.
 
 ### Codex App worktree behavior (“codex”)
-Based on Codex App documentation, the worktree model is intentionally different from this CLI’s task/branch model:
+Based on Codex App documentation (and current app UI), the worktree model is intentionally different from this CLI’s task/branch model:
 - **Worktree location is not per-worktree user-chosen**: worktrees are created under `$CODEX_HOME/worktrees` so the app can manage them consistently.
 - **Worktrees start in detached HEAD** by default (to avoid Git’s restriction that a branch cannot be checked out in two worktrees at once).
 - **Local changes may be applied** when the worktree is created from an existing local branch with uncommitted changes.
-- **Sync is a first-class operation** for getting changes between the local checkout and the worktree:
-  - “Apply” worktree changes into local checkout.
-  - “Overwrite” worktree from local checkout.
+- **“Hand off changes” is a first-class operation** for getting changes between the local checkout and the worktree:
+  - UI labels are now “Hand off changes” with directions “To local” / “From local”.
+  - The official docs still use “Sync with local” for the same action and describe “Apply” and “Overwrite” modes.
   - Sync does not transfer ignored files (and the resulting state may not match a full re-clone).
+  - Terminology overlap: “Apply” also exists in the Codex CLI as `codex apply <task_id>` (Codex Cloud task diff). This can be confusing when discussing “apply” in the app UI vs the CLI.
 - **Worktree restoration** is a distinct concept (recreate a worktree from a Codex snapshot, rather than from the current local checkout).
 - **Cleanup is app-governed and tied to threads**: the Codex app cleans up worktrees when you archive threads (or on startup for worktrees with no associated threads), and it preserves a snapshot for later restore.
 
@@ -44,9 +45,9 @@ To keep `classic` stable and keep `codex` aligned with Codex App:
     - Example path: `~/.codex/worktrees/bf15/git-worktree-tasks`
     - `<task>` is `bf15` (the opaque ID), **not** `git-worktree-tasks`.
 - **Create is detached-only:** in `codex` mode, `create` should not offer a `--branch` escape hatch; the default stays detached to avoid future complexity.
-- **Finish is classic-only:** in `codex` mode, `finish` is not a good fit; use a dedicated `sync` command instead.
+- **Finish is classic-only:** in `codex` mode, `finish` is not a good fit; use a dedicated `apply` command instead.
 - **Cleanup follows current mode:** `gwtt cleanup` should operate on the worktrees owned by the active mode (`classic` naming vs `$CODEX_HOME/worktrees`), rather than mixing behaviors.
-- **Sync UX:** `gwtt sync <opaque-id>` defaults to “apply”; if a conflict is detected, prompt to “overwrite” (second confirmation), skippable with `--yes`.
+- **Apply UX:** `gwtt apply <opaque-id>` defaults to “apply”; if a conflict is detected, prompt to “overwrite” (second confirmation), skippable with `--yes`.
 - **Cleanup in codex mode:** free disk by deleting the on-disk directory under `$CODEX_HOME/worktrees/<opaque-id>`, but only when it is safe:
   - Skip worktrees that fall under Codex App’s “never clean up if …” restrictions.
   - If we cannot verify a restriction (e.g., pinned/sidebar linkage), still allow deletion but show a prominent warning and require a second confirmation (skippable with `--yes`).
@@ -55,7 +56,7 @@ To keep `classic` stable and keep `codex` aligned with Codex App:
 ### Practical restrictions implied by `--mode=codex`
 - **No “task branch” assumption:** detached worktrees mean we can’t infer branch names from task names.
 - **No arbitrary `--path` override:** codex-mode worktrees live under `$CODEX_HOME/worktrees`; allowing arbitrary paths would complicate cleanup, display, and registry invariants.
-- **Different command surface:** branch-merge workflows (`finish`) are replaced by sync workflows (`sync apply` / `sync overwrite`).
+- **Different command surface:** branch-merge workflows (`finish`) are replaced by apply workflows (`apply` / `overwrite`).
 - **Cleanup restrictions from Codex App:** Codex App’s auto-cleanup is disabled in some cases (e.g., pinned conversation, added to sidebar, age > 4 days, worktree count > 10).
   - Note: the “age > 4 days” / “count > 10” conditions are counterintuitive, but this is the wording in the official docs as of 2026-02-04.
  - **Detached HEAD as codex marker:** codex-mode worktrees are detached; classic-mode worktrees are expected to be on a branch. Use this to keep classic commands from “seeing” codex worktrees.
@@ -68,10 +69,10 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
 ## Implications or Recommendations
 - Add a global flag `--mode` with values:
   - `classic` (default): current behavior and naming convention.
-  - `codex`: Codex App-aligned behavior (detached worktrees, `$CODEX_HOME` root, ID-based mapping, sync-oriented workflow).
+  - `codex`: Codex App-aligned behavior (detached worktrees, `$CODEX_HOME` root, ID-based mapping, apply-oriented workflow).
 - Treat `codex` mode as additive:
   - Keep existing commands and semantics intact in `classic`.
-  - Introduce new behavior behind `--mode=codex` (and/or new codex-only subcommands like `sync`) rather than changing defaults.
+  - Introduce new behavior behind `--mode=codex` (and/or new codex-only subcommands like `apply`) rather than changing defaults.
 - Define a “codex worktree root”:
   - In codex mode, treat `$CODEX_HOME/worktrees` as the only allowable root for “managed” worktrees.
 - Introduce a path rendering helper that can:
@@ -117,14 +118,14 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
   - Filter entries whose worktree path is under `$CODEX_HOME/worktrees/`.
 - Do not attempt to infer repo identity from `<opaque-id>` naming.
 
-### `sync` (codex mode)
-- CLI: `gwtt sync <opaque-id>` (default operation: apply worktree changes into the local checkout).
+### `apply` (codex mode)
+- CLI: `gwtt apply <opaque-id>` (default operation: apply worktree changes into the local checkout).
 - Conflict detection signals (predictable, conservative):
   - Local checkout is dirty, or
   - the apply/merge step fails, or
   - both sides modified the same file (where detectable).
 - On conflict: prompt whether to “overwrite” (local -> worktree) and require a second confirmation; `--yes` bypasses the overwrite confirmation.
-- Keep Codex App parity: ignored files are not synced.
+- Keep Codex App parity: ignored files are not transferred.
 
 ### `cleanup` (codex mode)
 - Scope: only delete the on-disk directory at `$CODEX_HOME/worktrees/<opaque-id>` (free disk; do not touch classic paths).
@@ -144,11 +145,15 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
 ## Open Questions (Remaining)
 - Can we (safely) detect any Codex cleanup-restriction signals from disk without coupling `gwtt` to Codex’s internal storage formats?
   - Likely no; default to warnings + a second confirmation (skippable with `--yes`) for codex cleanup.
-- What is the most user-friendly confirmation wording for “overwrite” (sync) and “yolo delete” (cleanup) that still prevents accidents?
+- What is the most user-friendly confirmation wording for “overwrite” (apply) and “yolo delete” (cleanup) that still prevents accidents?
   - Pending: depends on user confidence that Codex can restore a worktree after manual deletion (docs only guarantee snapshots before **Codex-managed** cleanup).
 
 ## Notes
-- Restoration remains out of scope: keep to create/sync/list/status only for now; a future `restore` likely needs to integrate with Codex App snapshot state.
+- Restoration remains out of scope: keep to create/apply/list/status only for now; a future `restore` likely needs to integrate with Codex App snapshot state.
+
+## Open Issues (Worktrees + Shell/Run Scripts)
+- App-side issues only (not CLI behavior). Track open worktree-related issues: https://github.com/openai/codex/issues?q=is%3Aissue%20state%3Aopen%20worktree
+- Recent example: “Codex app: Worktrees keep forgetting the "Run" script” (open, Feb 3, 2026). https://github.com/openai/codex/issues/10476
 
 ## References
 - Codex App worktrees documentation (includes cleanup + FAQ): https://developers.openai.com/codex/app/worktrees/

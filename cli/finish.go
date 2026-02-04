@@ -34,7 +34,7 @@ func newFinishCommand() *cobra.Command {
 			ctx := cmd.Context()
 			runner := defaultRunner()
 			if cfg, ok := configFromContext(ctx); ok && cfg.Mode == modeCodex {
-				return fmt.Errorf("finish is not supported in --mode=codex (use gwtt sync or run with --mode=classic)")
+				return fmt.Errorf("finish is not supported in --mode=codex (use gwtt apply or run with --mode=classic)")
 			}
 			if cfg, ok := configFromContext(cmd.Context()); ok {
 				if !cmd.Flags().Changed("yes") {

@@ -15,36 +15,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type syncOptions struct {
+type applyOptions struct {
 	yes    bool
 	dryRun bool
 }
 
-type syncConflictError struct {
+type applyConflictError struct {
 	reason string
 	err    error
 }
 
-func (e *syncConflictError) Error() string {
+func (e *applyConflictError) Error() string {
 	if e.err == nil {
 		return e.reason
 	}
 	return fmt.Sprintf("%s: %v", e.reason, e.err)
 }
 
-func (e *syncConflictError) Unwrap() error { return e.err }
+func (e *applyConflictError) Unwrap() error { return e.err }
 
-func newSyncCommand() *cobra.Command {
-	opts := &syncOptions{}
+func newApplyCommand() *cobra.Command {
+	opts := &applyOptions{}
 	cmd := &cobra.Command{
-		Use:   "sync <task>",
-		Short: "Sync changes between a Codex worktree and the local checkout",
+		Use:   "apply <task>",
+		Short: "Apply changes between a Codex worktree and the local checkout",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			cfg, ok := configFromContext(ctx)
 			if !ok || cfg.Mode != modeCodex {
-				return fmt.Errorf("sync is only supported in --mode=codex")
+				return fmt.Errorf("apply is only supported in --mode=codex")
 			}
 
 			runner := defaultRunner()
@@ -79,12 +79,12 @@ func newSyncCommand() *cobra.Command {
 				return fmt.Errorf("no Codex worktree found for %q under %s", opaqueID, filepath.Join("$CODEX_HOME", "worktrees"))
 			}
 
-			conflictReasons, err := detectSyncConflicts(ctx, runner, repoRoot, wtPath)
+			conflictReasons, err := detectApplyConflicts(ctx, runner, repoRoot, wtPath)
 			if err != nil {
 				return err
 			}
 			if len(conflictReasons) > 0 {
-				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n", ui.WarningStyle.Render("sync conflict detected:")); err != nil {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n", ui.WarningStyle.Render("apply conflict detected:")); err != nil {
 					return err
 				}
 				for _, reason := range conflictReasons {
@@ -110,11 +110,11 @@ func newSyncCommand() *cobra.Command {
 					}
 				}
 
-				return syncOverwrite(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun)
+				return overwriteWorktreeChanges(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun)
 			}
 
-			if err := syncApply(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun); err != nil {
-				var conflictErr *syncConflictError
+			if err := applyWorktreeChanges(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun); err != nil {
+				var conflictErr *applyConflictError
 				if errors.As(err, &conflictErr) {
 					if !opts.yes {
 						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n", ui.WarningStyle.Render(conflictErr.reason)); err != nil {
@@ -135,11 +135,11 @@ func newSyncCommand() *cobra.Command {
 							return errCanceled
 						}
 					}
-					return syncOverwrite(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun)
+					return overwriteWorktreeChanges(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun)
 				}
 				return err
 			}
-			if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("sync complete")); err != nil {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("apply complete")); err != nil {
 				return err
 			}
 			return nil
@@ -170,7 +170,7 @@ func resolveCodexWorktreePath(ctx context.Context, runner git.Runner, repoRoot, 
 	return "", false, nil
 }
 
-func detectSyncConflicts(ctx context.Context, runner git.Runner, repoRoot, worktreePath string) ([]string, error) {
+func detectApplyConflicts(ctx context.Context, runner git.Runner, repoRoot, worktreePath string) ([]string, error) {
 	var reasons []string
 
 	dirty, err := isDirty(ctx, runner, repoRoot)
@@ -258,7 +258,7 @@ func intersects(left, right map[string]struct{}) bool {
 	return false
 }
 
-func syncApply(ctx context.Context, cmd *cobra.Command, runner git.Runner, repoRoot, worktreePath string, dryRun bool) error {
+func applyWorktreeChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner, repoRoot, worktreePath string, dryRun bool) error {
 	patch, err := gitDiff(ctx, runner, worktreePath)
 	if err != nil {
 		return err
@@ -272,7 +272,7 @@ func syncApply(ctx context.Context, cmd *cobra.Command, runner git.Runner, repoR
 
 	if patch != "" {
 		if err := runGit(ctx, cmd, dryRun, runner, "-C", repoRoot, "apply", "--check", patchFile); err != nil {
-			return &syncConflictError{reason: "apply patch check failed", err: err}
+			return &applyConflictError{reason: "apply patch check failed", err: err}
 		}
 		if err := runGit(ctx, cmd, dryRun, runner, "-C", repoRoot, "apply", patchFile); err != nil {
 			return fmt.Errorf("apply patch: %w", err)
@@ -292,7 +292,7 @@ func syncApply(ctx context.Context, cmd *cobra.Command, runner git.Runner, repoR
 	return nil
 }
 
-func syncOverwrite(ctx context.Context, cmd *cobra.Command, runner git.Runner, repoRoot, worktreePath string, dryRun bool) error {
+func overwriteWorktreeChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner, repoRoot, worktreePath string, dryRun bool) error {
 	if err := runGit(ctx, cmd, dryRun, runner, "-C", worktreePath, "reset", "--hard"); err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func listUntracked(ctx context.Context, runner git.Runner, repoRoot string) ([]s
 }
 
 func writeTempPatch(contents string) (string, error) {
-	tmp, err := os.CreateTemp("", "gwtt-sync-*.patch")
+	tmp, err := os.CreateTemp("", "gwtt-apply-*.patch")
 	if err != nil {
 		return "", err
 	}
