@@ -40,7 +40,9 @@ To keep `classic` stable and keep `codex` aligned with Codex App:
 - **Identity & mapping via inspection (no extra registry files):**
   - Do not introduce new state files like `registry.json`/TOML for codex mode.
   - For `list`/`status`, inspect `$CODEX_HOME/worktrees/**` (and/or `git worktree list --porcelain` scoped to the local checkout) to discover worktrees and compute status.
-  - In codex mode, `<task>` is the **exact** worktree directory name under `$CODEX_HOME/worktrees` (an opaque ID).
+  - In codex mode, `<task>` is the **opaque ID directory** directly under `$CODEX_HOME/worktrees`.
+    - Example path: `~/.codex/worktrees/bf15/git-worktree-tasks`
+    - `<task>` is `bf15` (the opaque ID), **not** `git-worktree-tasks`.
 - **Create is detached-only:** in `codex` mode, `create` should not offer a `--branch` escape hatch; the default stays detached to avoid future complexity.
 - **Finish is classic-only:** in `codex` mode, `finish` is not a good fit; use a dedicated `sync` command instead.
 - **Cleanup follows current mode:** `gwtt cleanup` should operate on the worktrees owned by the active mode (`classic` naming vs `$CODEX_HOME/worktrees`), rather than mixing behaviors.
@@ -56,6 +58,7 @@ To keep `classic` stable and keep `codex` aligned with Codex App:
 - **Different command surface:** branch-merge workflows (`finish`) are replaced by sync workflows (`sync apply` / `sync overwrite`).
 - **Cleanup restrictions from Codex App:** Codex App’s auto-cleanup is disabled in some cases (e.g., pinned conversation, added to sidebar, age > 4 days, worktree count > 10).
   - Note: the “age > 4 days” / “count > 10” conditions are counterintuitive, but this is the wording in the official docs as of 2026-02-04.
+ - **Detached HEAD as codex marker:** codex-mode worktrees are detached; classic-mode worktrees are expected to be on a branch. Use this to keep classic commands from “seeing” codex worktrees.
 
 ### Path display differences (UX)
 Codex App uses a “variable-aware” presentation of paths (and the user specifically called out `$CODEX_HOME`):
@@ -105,7 +108,7 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
 - Display paths under this root as `$CODEX_HOME/...` by default (unless `--abs` forces absolute).
 
 ### Selection model (`<task>` in codex mode)
-- `<task>` is the exact `<opaque-id>` directory name under `$CODEX_HOME/worktrees`.
+- `<task>` is the **exact opaque ID** directory name under `$CODEX_HOME/worktrees` (the first path segment).
 - `gwtt list/status --mode=codex` should render `TASK=<opaque-id>` to make the identifier discoverable and copy/paste friendly.
 
 ### Repo scoping (`list/status` in codex mode)
@@ -137,6 +140,7 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
 ## Open Questions (Remaining)
 - Can we (safely) detect any Codex cleanup-restriction signals from disk without coupling `gwtt` to Codex’s internal storage formats?
 - What is the most user-friendly confirmation wording for “overwrite” (sync) and “yolo delete” (cleanup) that still prevents accidents?
+- Should `--output raw` in codex mode return **relative paths** (for composability) while display output uses `$CODEX_HOME/...`?
 
 ## Notes
 - Restoration remains out of scope: keep to create/sync/list/status only for now; a future `restore` likely needs to integrate with Codex App snapshot state.

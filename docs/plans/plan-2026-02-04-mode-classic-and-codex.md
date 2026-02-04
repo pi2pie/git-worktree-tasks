@@ -37,25 +37,27 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
   - [x] Env: `GWTT_MODE`.
   - [x] Config: `mode = "classic"|"codex"`.
   - [x] Validation and error messaging for unsupported values.
-- [x] Codex-mode worktree discovery primitives:
-  - [x] Determine `$CODEX_HOME` (or `CODEX_HOME`) and `worktreesRoot := $CODEX_HOME/worktrees`.
-  - [x] Use `internal/worktree.List(ctx, runner, repoRoot)` and filter entries whose path is under `worktreesRoot`.
-  - [x] Derive `<opaque-id>` as `filepath.Base(worktreePath)`.
-- [x] Implement codex-mode behavior for read-only commands:
-  - [x] `gwtt list` shows codex worktrees for the current repo with `Task=<opaque-id>` and a `$CODEX_HOME/...`-aware display path.
-  - [x] `gwtt status` does the same, plus `modified_time`.
-- [x] Add `modified_time` to status rows:
-  - [x] Use filesystem `mtime` of the worktree directory.
-  - [x] Format as RFC3339 UTC for JSON/CSV; table uses the same value.
-- [x] Add `gwtt sync <opaque-id>` (codex-mode only):
-  - [x] Default to “apply” (worktree -> local checkout).
-  - [x] Conflict detection: dirty local checkout, failed apply/merge step, and/or both sides modified the same file (where detectable).
-  - [x] On conflict, prompt whether to overwrite; require a second confirmation; `--yes` bypasses overwrite confirmation.
-  - [x] Keep behavior aligned with Codex App: ignored files are not synced.
-- [x] Re-check `cleanup` behavior for codex mode:
-  - [x] Restrict deletions to `$CODEX_HOME/worktrees/<opaque-id>` only.
-  - [x] Mirror Codex App “never clean up if …” rules when detectable; otherwise warn prominently and require a second confirmation.
-  - [x] Document/communicate that Codex restore is best-effort (not guaranteed by `gwtt`).
+- [ ] Codex-mode worktree discovery primitives:
+  - [ ] Determine `$CODEX_HOME` (or `CODEX_HOME`) and `worktreesRoot := $CODEX_HOME/worktrees`.
+  - [ ] Use `internal/worktree.List(ctx, runner, repoRoot)` and filter entries whose path is under `worktreesRoot`.
+  - [ ] Derive `<opaque-id>` as **the first path segment** under `$CODEX_HOME/worktrees` (e.g., `$CODEX_HOME/worktrees/bf15/<repo>` → `bf15`).
+- [ ] Implement codex-mode behavior for read-only commands:
+  - [ ] `gwtt list` shows codex worktrees for the current repo with `Task=<opaque-id>` and a `$CODEX_HOME/...`-aware display path.
+  - [ ] `gwtt status` does the same, plus `modified_time`.
+  - [ ] In classic mode, hide codex worktrees by default (treat detached HEAD under `$CODEX_HOME/worktrees` as codex-owned).
+- [ ] Add `modified_time` to status rows:
+  - [ ] Use filesystem `mtime` of the worktree directory.
+  - [ ] Format as RFC3339 UTC for JSON/CSV; table uses the same value.
+- [ ] Add `gwtt sync <opaque-id>` (codex-mode only):
+  - [ ] Default to “apply” (worktree -> local checkout).
+  - [ ] Conflict detection: dirty local checkout, failed apply/merge step, and/or both sides modified the same file (where detectable).
+  - [ ] On conflict, prompt whether to overwrite; require a second confirmation; `--yes` bypasses overwrite confirmation.
+  - [ ] Keep behavior aligned with Codex App: ignored files are not synced.
+- [ ] Re-check `cleanup` behavior for codex mode:
+  - [ ] Restrict deletions to `$CODEX_HOME/worktrees/<opaque-id>` only.
+  - [ ] Mirror Codex App “never clean up if …” rules when detectable; otherwise warn prominently and require a second confirmation.
+  - [ ] Document/communicate that Codex restore is best-effort (not guaranteed by `gwtt`).
+  - [ ] Ensure codex-mode `--output raw` returns a composable path (relative or absolute) rather than `$CODEX_HOME` placeholders; keep `$CODEX_HOME/...` for display formats.
 
 ### Phase 3: Unit Test Verification
 - [ ] Add tests for `mode` precedence and validation (flag/env/config/default).
