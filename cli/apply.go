@@ -319,6 +319,9 @@ func overwriteWorktreeChanges(ctx context.Context, cmd *cobra.Command, runner gi
 	}()
 
 	if patch != "" {
+		if err := runGit(ctx, cmd, dryRun, runner, "-C", worktreePath, "apply", "--check", patchFile); err != nil {
+			return &applyConflictError{reason: "apply patch check failed", err: err}
+		}
 		if err := runGit(ctx, cmd, dryRun, runner, "-C", worktreePath, "apply", patchFile); err != nil {
 			return err
 		}
