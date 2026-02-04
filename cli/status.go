@@ -145,7 +145,7 @@ func newStatusCommand() *cobra.Command {
 			rows := make([]statusRow, 0, len(worktrees))
 			for _, wt := range worktrees {
 				branch := strings.TrimPrefix(wt.Branch, "refs/heads/")
-				task := "-"
+				var task string
 				var wtAbs string
 				if mode == modeCodex {
 					var err error
@@ -176,12 +176,12 @@ func newStatusCommand() *cobra.Command {
 						}
 					}
 					task, _ = worktree.TaskFromPath(repo, wt.Path)
-					if task == "" {
-						task = "-"
-					}
 					if query != "" && !matchesTask(task, query, opts.strict) {
 						continue
 					}
+				}
+				if task == "" {
+					task = "-"
 				}
 				if opts.branch != "" && branch != opts.branch {
 					continue

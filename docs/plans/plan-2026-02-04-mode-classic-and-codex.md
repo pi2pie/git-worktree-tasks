@@ -63,12 +63,12 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 - [x] Confirmed app-side worktree shell/run-script issues are out of CLI scope and tracked upstream.
 
 ### Phase 3: Unit Test Verification
-- [ ] Add tests for `mode` precedence and validation (flag/env/config/default).
-- [ ] Add tests for codex-mode list/status filtering (repo-scoped via `git worktree list` + `$CODEX_HOME/worktrees` prefix filter).
-- [ ] Add tests for `<opaque-id>` derivation and path rendering (`$CODEX_HOME` display).
-- [ ] Add tests for `modified_time` formatting (RFC3339 UTC) and JSON/CSV output shape.
-- [ ] Add tests for `apply` conflict detection and confirmation gating (including `--yes`).
-- [ ] Add tests for codex cleanup scope restriction + confirmation flow.
+- [x] Add tests for `mode` precedence and validation (flag/env/config/default).
+- [x] Add tests for codex-mode list/status filtering (repo-scoped via `git worktree list` + `$CODEX_HOME/worktrees` prefix filter).
+- [x] Add tests for `<opaque-id>` derivation and path rendering (`$CODEX_HOME` display).
+- [x] Add tests for `modified_time` formatting (RFC3339 UTC) and JSON/CSV output shape.
+- [x] Add tests for `apply` conflict detection and confirmation gating (including `--yes`).
+- [x] Add tests for codex cleanup scope restriction + confirmation flow.
 
 ### Phase 4: README / CLI Docs Update
 - [ ] Update `README.md`:

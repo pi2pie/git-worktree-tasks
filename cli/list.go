@@ -128,7 +128,7 @@ func newListCommand() *cobra.Command {
 			rows := make([]listRow, 0, len(worktrees))
 			for _, wt := range worktrees {
 				branch := strings.TrimPrefix(wt.Branch, "refs/heads/")
-				task := "-"
+				var task string
 				var codexRel string
 				var wtAbs string
 				var err error
@@ -157,9 +157,9 @@ func newListCommand() *cobra.Command {
 						}
 					}
 					task, _ = worktree.TaskFromPath(repo, wt.Path)
-					if task == "" {
-						task = "-"
-					}
+				}
+				if task == "" {
+					task = "-"
 				}
 				row := listRow{
 					Task:    task,

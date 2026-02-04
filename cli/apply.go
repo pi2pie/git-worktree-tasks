@@ -268,7 +268,11 @@ func applyWorktreeChanges(ctx context.Context, cmd *cobra.Command, runner git.Ru
 	if err != nil {
 		return err
 	}
-	defer os.Remove(patchFile)
+	defer func() {
+		if err := removeTempPatch(patchFile); err != nil {
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: failed to remove temp patch %s: %v\n", patchFile, err)
+		}
+	}()
 
 	if patch != "" {
 		if err := runGit(ctx, cmd, dryRun, runner, "-C", repoRoot, "apply", "--check", patchFile); err != nil {
@@ -308,7 +312,11 @@ func overwriteWorktreeChanges(ctx context.Context, cmd *cobra.Command, runner gi
 	if err != nil {
 		return err
 	}
-	defer os.Remove(patchFile)
+	defer func() {
+		if err := removeTempPatch(patchFile); err != nil {
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: failed to remove temp patch %s: %v\n", patchFile, err)
+		}
+	}()
 
 	if patch != "" {
 		if err := runGit(ctx, cmd, dryRun, runner, "-C", worktreePath, "apply", patchFile); err != nil {
@@ -367,14 +375,19 @@ func writeTempPatch(contents string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer tmp.Close()
 	if _, err := io.WriteString(tmp, contents); err != nil {
+		if closeErr := tmp.Close(); closeErr != nil {
+			return "", fmt.Errorf("write patch: %w (close error: %v)", err, closeErr)
+		}
+		return "", err
+	}
+	if err := tmp.Close(); err != nil {
 		return "", err
 	}
 	return tmp.Name(), nil
 }
 
-func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer) error {
+func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer) (err error) {
 	if dryRun {
 		_, err := fmt.Fprintf(out, "copy %s -> %s\n", filepath.Join(srcRoot, rel), filepath.Join(dstRoot, rel))
 		return err
@@ -389,7 +402,11 @@ func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() {
+		if closeErr := in.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
 	info, err := in.Stat()
 	if err != nil {
@@ -400,9 +417,23 @@ func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	defer outFile.Close()
+	defer func() {
+		if closeErr := outFile.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
 	if _, err := io.Copy(outFile, in); err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeTempPatch(path string) error {
+	if strings.TrimSpace(path) == "" {
+		return nil
+	}
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 	return nil

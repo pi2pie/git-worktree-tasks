@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pi2pie/git-worktree-tasks/cli"
 )
@@ -22,15 +24,16 @@ type listRow struct {
 }
 
 type statusRow struct {
-	Task       string `json:"task"`
-	Branch     string `json:"branch"`
-	Path       string `json:"path"`
-	Base       string `json:"base"`
-	Target     string `json:"target"`
-	LastCommit string `json:"last_commit"`
-	Dirty      bool   `json:"dirty"`
-	Ahead      int    `json:"ahead"`
-	Behind     int    `json:"behind"`
+	Task         string `json:"task"`
+	Branch       string `json:"branch"`
+	Path         string `json:"path"`
+	ModifiedTime string `json:"modified_time"`
+	Base         string `json:"base"`
+	Target       string `json:"target"`
+	LastCommit   string `json:"last_commit"`
+	Dirty        bool   `json:"dirty"`
+	Ahead        int    `json:"ahead"`
+	Behind       int    `json:"behind"`
 }
 
 func TestIntegrationCreateListStatusFinish(t *testing.T) {
@@ -67,6 +70,16 @@ func TestIntegrationCreateListStatusFinish(t *testing.T) {
 	if statusRows[0].LastCommit == "" {
 		t.Fatalf("expected last_commit to be populated, got empty")
 	}
+	if statusRows[0].ModifiedTime == "" {
+		t.Fatalf("expected modified_time to be populated, got empty")
+	}
+	parsedModified, err := time.Parse(time.RFC3339, statusRows[0].ModifiedTime)
+	if err != nil {
+		t.Fatalf("parse modified_time: %v", err)
+	}
+	if parsedModified.Location() != time.UTC {
+		t.Fatalf("expected modified_time in UTC, got %s", parsedModified.Location())
+	}
 
 	writeFile(t, absWorktreePath, "task.txt", "task change\n")
 	runGit(t, absWorktreePath, "add", "task.txt")
@@ -96,6 +109,47 @@ func TestIntegrationStatusNoCommits(t *testing.T) {
 	}
 	if rows[0].Base != "empty history" {
 		t.Fatalf("expected base empty history, got %q", rows[0].Base)
+	}
+	if rows[0].ModifiedTime == "" {
+		t.Fatalf("expected modified_time to be populated, got empty")
+	}
+	parsedModified, err := time.Parse(time.RFC3339, rows[0].ModifiedTime)
+	if err != nil {
+		t.Fatalf("parse modified_time: %v", err)
+	}
+	if parsedModified.Location() != time.UTC {
+		t.Fatalf("expected modified_time in UTC, got %s", parsedModified.Location())
+	}
+}
+
+func TestIntegrationStatusCsvIncludesModifiedTime(t *testing.T) {
+	repoDir := initRepo(t, true)
+	statusOutput := runCLI(t, repoDir, "", "--nocolor", "status", "--output", "csv")
+	reader := csv.NewReader(strings.NewReader(statusOutput))
+	header, err := reader.Read()
+	if err != nil {
+		t.Fatalf("read csv header: %v", err)
+	}
+	modifiedIndex := indexOf(header, "modified_time")
+	if modifiedIndex == -1 {
+		t.Fatalf("expected modified_time column in header, got %v", header)
+	}
+	record, err := reader.Read()
+	if err != nil {
+		t.Fatalf("read csv record: %v", err)
+	}
+	if len(record) != len(header) {
+		t.Fatalf("csv record length %d != header length %d", len(record), len(header))
+	}
+	if record[modifiedIndex] == "" {
+		t.Fatalf("expected modified_time column to be populated, got empty")
+	}
+	parsedModified, err := time.Parse(time.RFC3339, record[modifiedIndex])
+	if err != nil {
+		t.Fatalf("parse modified_time: %v", err)
+	}
+	if parsedModified.Location() != time.UTC {
+		t.Fatalf("expected modified_time in UTC, got %s", parsedModified.Location())
 	}
 }
 
@@ -139,6 +193,116 @@ func TestIntegrationDetachedHeadAndPrunableCleanup(t *testing.T) {
 	runCLI(t, repoDir, "", "--nocolor", "cleanup", "my-task", "--yes")
 	if branchExists(t, repoDir, "my-task") {
 		t.Fatalf("expected branch to be removed after cleanup")
+	}
+}
+
+func TestIntegrationCodexListStatusFiltering(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "bf15"
+	addCodexWorktree(t, repoDir, codexHome, opaqueID)
+
+	listOutput := runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "list", "--output", "json")
+	var listRows []listRow
+	if err := json.Unmarshal([]byte(listOutput), &listRows); err != nil {
+		t.Fatalf("parse list json: %v", err)
+	}
+	if len(listRows) != 1 {
+		t.Fatalf("expected 1 codex list row, got %d", len(listRows))
+	}
+	if listRows[0].Task != opaqueID {
+		t.Fatalf("expected codex task %q, got %q", opaqueID, listRows[0].Task)
+	}
+	wantPath := filepath.Join("$CODEX_HOME", "worktrees", opaqueID, filepath.Base(repoDir))
+	if listRows[0].Path != wantPath {
+		t.Fatalf("expected codex path %q, got %q", wantPath, listRows[0].Path)
+	}
+
+	statusOutput := runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "status", "--output", "json")
+	var statusRows []statusRow
+	if err := json.Unmarshal([]byte(statusOutput), &statusRows); err != nil {
+		t.Fatalf("parse status json: %v", err)
+	}
+	if len(statusRows) != 1 {
+		t.Fatalf("expected 1 codex status row, got %d", len(statusRows))
+	}
+	if statusRows[0].Task != opaqueID {
+		t.Fatalf("expected codex task %q, got %q", opaqueID, statusRows[0].Task)
+	}
+	if statusRows[0].Path != wantPath {
+		t.Fatalf("expected codex path %q, got %q", wantPath, statusRows[0].Path)
+	}
+
+	classicListOutput := runCLI(t, repoDir, "", "--nocolor", "list", "--output", "json")
+	var classicRows []listRow
+	if err := json.Unmarshal([]byte(classicListOutput), &classicRows); err != nil {
+		t.Fatalf("parse classic list json: %v", err)
+	}
+	for _, row := range classicRows {
+		if row.Task == opaqueID {
+			t.Fatalf("expected codex worktree to be filtered in classic mode")
+		}
+	}
+}
+
+func TestIntegrationApplyConflictConfirmation(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "apply01"
+	codexPath := addCodexWorktree(t, repoDir, codexHome, opaqueID)
+
+	writeFile(t, repoDir, "shared.txt", "local change\n")
+	writeFile(t, codexPath, "shared.txt", "codex change\n")
+
+	_, err := runCLIError(t, repoDir, "no\n", "--nocolor", "--mode", "codex", "apply", opaqueID)
+	if err == nil || !strings.Contains(err.Error(), "canceled") {
+		t.Fatalf("expected apply to be canceled, got %v", err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(codexPath, "shared.txt"))
+	if err != nil {
+		t.Fatalf("read codex file: %v", err)
+	}
+	if string(content) != "codex change\n" {
+		t.Fatalf("expected codex content to remain, got %q", string(content))
+	}
+
+	runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID, "--yes")
+	content, err = os.ReadFile(filepath.Join(codexPath, "shared.txt"))
+	if err != nil {
+		t.Fatalf("read codex file after apply: %v", err)
+	}
+	if string(content) != "local change\n" {
+		t.Fatalf("expected codex content to be overwritten, got %q", string(content))
+	}
+}
+
+func TestIntegrationCodexCleanupScopeAndConfirm(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "clean01"
+	codexPath := addCodexWorktree(t, repoDir, codexHome, opaqueID)
+	classicPath := addClassicWorktree(t, repoDir, "classic-task")
+
+	_, err := runCLIError(t, repoDir, "", "--nocolor", "--mode", "codex", "cleanup", opaqueID, "--remove-branch")
+	if err == nil || !strings.Contains(err.Error(), "branch cleanup is not supported") {
+		t.Fatalf("expected codex branch cleanup error, got %v", err)
+	}
+
+	_, err = runCLIError(t, repoDir, "yes\nno\n", "--nocolor", "--mode", "codex", "cleanup", opaqueID)
+	if err == nil || !strings.Contains(err.Error(), "canceled") {
+		t.Fatalf("expected codex cleanup to be canceled, got %v", err)
+	}
+	if _, err := os.Stat(codexPath); err != nil {
+		t.Fatalf("expected codex worktree to remain after cancel: %v", err)
+	}
+
+	runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "cleanup", opaqueID, "--yes")
+	if _, err := os.Stat(codexPath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected codex worktree removed, stat error: %v", err)
+	}
+	if _, err := os.Stat(classicPath); err != nil {
+		t.Fatalf("expected classic worktree to remain, stat error: %v", err)
 	}
 }
 
@@ -189,6 +353,7 @@ func runCLIWithErr(t *testing.T, cwd string, input string, args ...string) (stri
 		t.Fatalf("chdir: %v", err)
 	}
 	t.Setenv("GWTT_THEME", "default")
+	t.Setenv("HOME", t.TempDir())
 
 	cmd := cli.RootCommand()
 	var outBuf bytes.Buffer
@@ -233,4 +398,41 @@ func branchExists(t *testing.T, dir, branch string) bool {
 	t.Helper()
 	output := runGit(t, dir, "branch", "--list", branch)
 	return strings.TrimSpace(output) != ""
+}
+
+func setCodexHome(t *testing.T) string {
+	t.Helper()
+	codexHome := t.TempDir()
+	if resolved, err := filepath.EvalSymlinks(codexHome); err == nil {
+		codexHome = resolved
+	}
+	t.Setenv("CODEX_HOME", codexHome)
+	return codexHome
+}
+
+func addCodexWorktree(t *testing.T, repoDir, codexHome, opaqueID string) string {
+	t.Helper()
+	worktreesRoot := filepath.Join(codexHome, "worktrees", opaqueID)
+	if err := os.MkdirAll(worktreesRoot, 0o755); err != nil {
+		t.Fatalf("mkdir codex worktrees: %v", err)
+	}
+	worktreePath := filepath.Join(worktreesRoot, filepath.Base(repoDir))
+	runGit(t, repoDir, "worktree", "add", "--detach", worktreePath)
+	return worktreePath
+}
+
+func addClassicWorktree(t *testing.T, repoDir, branch string) string {
+	t.Helper()
+	worktreePath := filepath.Join(filepath.Dir(repoDir), filepath.Base(repoDir)+"_"+branch)
+	runGit(t, repoDir, "worktree", "add", "-b", branch, worktreePath)
+	return worktreePath
+}
+
+func indexOf(values []string, target string) int {
+	for i, value := range values {
+		if value == target {
+			return i
+		}
+	}
+	return -1
 }
