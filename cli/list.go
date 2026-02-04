@@ -4,6 +4,8 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -41,7 +43,25 @@ func newListCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			mode := modeClassic
+			var codexHome string
+			var codexWorktrees string
+			var rawBase string
 			if cfg, ok := configFromContext(cmd.Context()); ok {
+				mode = cfg.Mode
+				if mode == modeCodex {
+					var err error
+					codexHome, err = codexHomeDir()
+					if err != nil {
+						return err
+					}
+					codexWorktrees = codexWorktreesRoot(codexHome)
+				} else {
+					if home, err := codexHomeDir(); err == nil {
+						codexHome = home
+						codexWorktrees = codexWorktreesRoot(codexHome)
+					}
+				}
 				if !cmd.Flags().Changed("output") {
 					opts.output = cfg.List.Output
 				}
@@ -58,6 +78,11 @@ func newListCommand() *cobra.Command {
 					opts.strict = cfg.List.Strict
 				}
 			}
+			if mode == modeCodex && opts.output == "raw" && opts.field == "path" && !opts.abs {
+				if cwd, err := os.Getwd(); err == nil {
+					rawBase = cwd
+				}
+			}
 			repoRoot, err := repoRoot(ctx, runner)
 			if err != nil {
 				return err
@@ -71,9 +96,16 @@ func newListCommand() *cobra.Command {
 			}
 			var query string
 			if len(args) == 1 {
-				query, err = normalizeTaskQuery(args[0])
-				if err != nil {
-					return err
+				if mode == modeCodex {
+					query = strings.TrimSpace(args[0])
+					if query == "" {
+						return fmt.Errorf("task query cannot be empty")
+					}
+				} else {
+					query, err = normalizeTaskQuery(args[0])
+					if err != nil {
+						return err
+					}
 				}
 			}
 			if opts.output == "raw" && query == "" && opts.branch == "" {
@@ -96,27 +128,84 @@ func newListCommand() *cobra.Command {
 			rows := make([]listRow, 0, len(worktrees))
 			for _, wt := range worktrees {
 				branch := strings.TrimPrefix(wt.Branch, "refs/heads/")
-				task, _ := worktree.TaskFromPath(repo, wt.Path)
+				var task string
+				var codexRel string
+				var wtAbs string
+				var err error
+				if mode == modeCodex {
+					wtAbs, err = worktree.NormalizePath(repoRoot, wt.Path)
+					if err != nil {
+						return err
+					}
+					opaqueID, rel, ok := codexWorktreeInfo(codexWorktrees, wtAbs)
+					if !ok {
+						continue
+					}
+					task = opaqueID
+					codexRel = rel
+					if branch == "" {
+						branch = "detached"
+					}
+				} else {
+					if codexWorktrees != "" {
+						wtAbs, err = worktree.NormalizePath(repoRoot, wt.Path)
+						if err != nil {
+							return err
+						}
+						if _, _, ok := codexWorktreeInfo(codexWorktrees, wtAbs); ok {
+							continue
+						}
+					}
+					task, _ = worktree.TaskFromPath(repo, wt.Path)
+				}
 				if task == "" {
 					task = "-"
 				}
 				row := listRow{
 					Task:    task,
 					Branch:  branch,
-					Path:    displayPath(repoRoot, wt.Path, opts.abs),
+					Path:    displayPathForMode(repoRoot, wt.Path, opts.abs, mode, codexHome),
 					Present: true,
 					Head:    worktree.ShortHash(wt.Head, shortHashLen),
 				}
-				if query != "" && !matchesTask(row.Task, query, opts.strict) {
-					continue
+				if mode == modeCodex && opts.output == "raw" && field == "path" {
+					if opts.abs {
+						if wtAbs == "" {
+							return fmt.Errorf("unable to derive codex worktree absolute path for %q", wt.Path)
+						}
+						row.Path = wtAbs
+					} else {
+						if wtAbs == "" {
+							return fmt.Errorf("unable to derive codex worktree absolute path for %q", wt.Path)
+						}
+						if rawBase != "" {
+							if rel, err := filepath.Rel(rawBase, wtAbs); err == nil {
+								row.Path = rel
+								goto rawPathDone
+							}
+						}
+						if codexRel == "" {
+							return fmt.Errorf("unable to derive codex worktree relative path for %q", wt.Path)
+						}
+						row.Path = filepath.Join("worktrees", codexRel)
+					}
+				}
+			rawPathDone:
+				if query != "" {
+					if !matchesTask(row.Task, query, opts.strict) {
+						continue
+					}
 				}
 				if opts.branch != "" && row.Branch != opts.branch {
 					continue
 				}
 				rows = append(rows, row)
+				if query != "" && !opts.strict {
+					break
+				}
 			}
 
-			if opts.output == "raw" && len(rows) == 0 {
+			if mode != modeCodex && opts.output == "raw" && len(rows) == 0 {
 				fallbackBranch := opts.branch
 				if fallbackBranch == "" {
 					fallbackBranch = query

@@ -165,7 +165,7 @@ ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 
 Settings resolve in this order (highest precedence first):
 
-1. `--theme` flag
+1. `--theme` / `--mode` flags
 2. Environment variables
 3. Project config (`gwtt.config.toml` or `gwtt.toml` in repo root)
 4. User config (`$HOME/.config/gwtt/config.toml`)
@@ -178,6 +178,9 @@ export GWTT_THEME=nord
 # Disable color output
 export GWTT_COLOR=0
 
+# Mode selection
+export GWTT_MODE=codex
+
 # List available themes
 gwtt --themes
 ```
@@ -187,6 +190,12 @@ gwtt --themes
 ```toml
 [theme]
 name = "nord"
+```
+
+### Mode Selection
+
+```toml
+mode = "classic" # or "codex"
 ```
 
 ### Other Defaults
@@ -248,6 +257,7 @@ name = "nord"
 
 | Command   | Alias | Description |
 |-----------|-------|-------------|
+| `apply`   |       | Apply Codex worktree changes to the local checkout (codex mode only) |
 | `create`  |       | Create a worktree and branch for a task |
 | `list`    | `ls`  | List task worktrees |
 | `status`  |       | Show detailed worktree status |
@@ -306,6 +316,9 @@ gwtt list --abs
 
 # Grid borders in table
 gwtt list --grid
+
+# Codex mode: list Codex-managed worktrees for this repo
+gwtt --mode codex list
 ```
 
 **Flags:**
@@ -332,9 +345,12 @@ gwtt status --target main
 
 # Filter by exact task name
 gwtt status --task "my-task"
+
+# Codex mode: show Codex-managed worktree status
+gwtt --mode codex status
 ```
 
-**Status columns:** Task, Branch, Path, Base, Target, Last Commit, Dirty, Ahead, Behind
+**Status columns:** Task, Branch, Path, Modified Time (RFC3339 UTC), Base, Target, Last Commit, Dirty, Ahead, Behind
 
 **Flags:**
 | Flag | Short | Description |
@@ -379,6 +395,23 @@ gwtt finish "my-task" --cleanup --yes
 | `--yes` | Skip confirmation prompts |
 | `--dry-run` | Show git commands without executing |
 
+### Applying Changes (Codex Mode)
+
+```bash
+# Apply Codex worktree changes to local checkout
+gwtt --mode codex apply <opaque-id>
+
+# Overwrite Codex worktree from local checkout without prompts
+gwtt --mode codex apply <opaque-id> --yes
+
+# Preview without executing
+gwtt --mode codex apply <opaque-id> --dry-run
+```
+
+**Notes:**
+- In codex mode, `<opaque-id>` is the directory directly under `$CODEX_HOME/worktrees`.
+- If conflicts are detected, `gwtt` prompts to overwrite the Codex worktree (second confirmation). `--yes` skips prompts.
+
 ### Cleanup
 
 ```bash
@@ -396,6 +429,9 @@ gwtt cleanup "my-task" --yes
 
 # Preview without executing
 gwtt cleanup "my-task" --dry-run
+
+# Codex mode: remove a Codex-managed worktree by opaque id
+gwtt --mode codex cleanup <opaque-id>
 ```
 
 **Flags:**
@@ -601,4 +637,4 @@ This project is licensed under the MIT License — see the [LICENSE](https://git
 - Task names are slugified (lowercase, hyphens replace spaces)
 - Paths are relative by default; use `--abs` for absolute
 - Use `--dry-run` to preview git commands
-- Global flags: `--theme`, `--nocolor`, `--themes`
+- Global flags: `--mode`, `--theme`, `--nocolor`, `--themes`

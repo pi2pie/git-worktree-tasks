@@ -30,6 +30,9 @@ func newCreateCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
+			if cfg, ok := configFromContext(ctx); ok && cfg.Mode == modeCodex {
+				return fmt.Errorf("create is not supported in --mode=codex yet (use Codex App to create worktrees or run with --mode=classic)")
+			}
 
 			repoRoot, err := repoRoot(ctx, runner)
 			if err != nil {

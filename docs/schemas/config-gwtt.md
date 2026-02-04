@@ -1,7 +1,8 @@
 ---
 title: "gwtt configuration schema"
 date: 2026-01-27
-status: completed
+modified-date: 2026-02-04
+status: in-progress
 agent: codex
 ---
 
@@ -15,7 +16,18 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 4. User config (`$HOME/.config/gwtt/config.toml`)
 5. Built-in defaults
 
+## Environment variables
+- `GWTT_THEME` overrides `[theme].name`.
+- `GWTT_COLOR` overrides `[ui].color_enabled`.
+- `GWTT_MODE` overrides `mode`.
+- `CODEX_HOME` is consumed in `mode="codex"` to locate `$CODEX_HOME/worktrees` (this is a Codex App/Codex CLI convention, not a `gwtt` config key).
+  - Fallback: if `CODEX_HOME` is unset, `gwtt` should assume `~/.codex` (home dir + `/.codex`) to align with Codex defaults.
+  - Note: confirm the default path against current Codex App/Codex CLI docs when implementing (and prefer matching their behavior over introducing a new `gwtt`-specific default).
+
 ## Schema
+### Root
+- `mode` (string enum: `classic`, `codex`; default: `classic`)
+
 ### `[theme]`
 - `name` (string, default: `"default"`)
 
@@ -75,10 +87,13 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 ## Decisions
 - `create.path.format` must include `{task}` to preserve task discovery.
 - `merge_mode` is exclusive; only one strategy may be active at a time.
+- Codex-mode uses an `apply` command for hand-off changes; there are no config keys for it yet.
 - No config defaults for `create.base` or `status/finish.target`.
 
 ## Examples
 ```toml
+mode = "classic"
+
 [theme]
 name = "nord"
 
