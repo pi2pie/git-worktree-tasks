@@ -1,7 +1,8 @@
 ---
 title: "Mode Flag: classic vs codex"
 date: 2026-02-04
-status: draft
+modified-date: 2026-02-04
+status: in-progress
 agent: codex
 ---
 
@@ -28,13 +29,19 @@ Based on Codex App documentation, the worktree model is intentionally different 
   - Sync does not transfer ignored files (and the resulting state may not match a full re-clone).
 - **Worktree restoration** is a distinct concept (recreate a worktree from a Codex snapshot, rather than from the current local checkout).
 
-### Practical restrictions we likely need in `--mode=codex`
-To avoid accidental behavior drift and to reflect the Codex App constraints, `codex` mode likely implies:
-- **No implicit “task branch”**: default worktrees should be detached and may not have a stable `<task>` branch name.
-- **Different identity model**: a worktree might be identified by an ID (or metadata) rather than the `<repo>_<task>` path convention.
-- **Limited/changed support for merge flows**:
-  - `finish` (merge branch into target) only makes sense if a branch exists; detached worktrees need either (1) an explicit branch creation step or (2) a new “sync/apply” flow.
-- **No arbitrary `--path` override** (or an explicit escape hatch), since Codex App doesn’t allow it and allowing it would complicate cleanup and display rules.
+### Decisions for `--mode=codex` (CLI alignment)
+To keep `classic` stable and keep `codex` aligned with Codex App:
+- **Identity & mapping via registry (not per-worktree metadata files):**
+  - Store the minimal mapping needed to resolve `<task> -> worktree path` in a registry under `$CODEX_HOME` (rather than scattering metadata files inside worktrees).
+  - “Metadata” should remain derivable from the worktree itself (e.g., via `gwtt status`-equivalent logic).
+- **Create is detached-only:** in `codex` mode, `create` should not offer a `--branch` escape hatch; the default stays detached to avoid future complexity.
+- **Finish is classic-only:** in `codex` mode, `finish` is not a good fit; use a dedicated `sync` command instead.
+- **Cleanup follows current mode:** `gwtt cleanup` should operate on the worktrees owned by the active mode (`classic` naming vs `$CODEX_HOME/worktrees` + registry), rather than mixing behaviors.
+
+### Practical restrictions implied by `--mode=codex`
+- **No “task branch” assumption:** detached worktrees mean we can’t infer branch names from task names.
+- **No arbitrary `--path` override:** codex-mode worktrees live under `$CODEX_HOME/worktrees`; allowing arbitrary paths would complicate cleanup, display, and registry invariants.
+- **Different command surface:** branch-merge workflows (`finish`) are replaced by sync workflows (`sync apply` / `sync overwrite`).
 
 ### Path display differences (UX)
 Codex App uses a “variable-aware” presentation of paths (and the user specifically called out `$CODEX_HOME`):
@@ -54,19 +61,21 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
   - Render relative-to-repo paths (classic default).
   - Render `$CODEX_HOME`-relative paths (codex default).
   - Still respect existing `--abs` behavior.
+- Implement `mode` as a first-class config value (not flag-only):
+  - Flag: `--mode` (highest precedence).
+  - Env var: `GWTT_MODE`.
+  - Config: `gwtt.config.toml`/`gwtt.toml` and `$HOME/.config/gwtt/config.toml`.
+  - Default: `classic`.
+- Keep ignored-file behavior aligned with Codex App in `codex` mode (do not add “include ignored” options initially).
 
 ## Open Questions
-- **Identity & mapping:** How should `gwtt` map `<task>` to a Codex-style worktree (ID, metadata file, a `.gwtt/` registry under `$CODEX_HOME`, etc.)?
-- **Command support matrix:** Which commands should be supported in `codex` mode?
-  - `create`: detached by default? allow `--branch` to opt into a branch?
-  - `finish`: allowed only when branch exists? replaced by `sync apply`?
-  - `cleanup`: should it clean only `$CODEX_HOME/worktrees` entries or also classic paths?
-- **Sync semantics in a CLI context:** Do we implement Codex-style “apply/overwrite” as:
-  - new `sync` command, or
-  - an option on existing commands (riskier for UX), or
-  - both (with `sync` as the primary entry point)?
-- **Ignored files:** Do we explicitly document that ignored files are not synced in `codex` mode, and do we provide an opt-in mechanism (e.g. tar/rsync) or keep behavior aligned with Codex App?
-- **Config & precedence:** Should mode be configurable via `GWTT_MODE` and `config.toml` (similar to theme), or remain flag-only to reduce ambiguity?
+- **Registry schema & location:** Where exactly under `$CODEX_HOME` should the registry live, and what format should it use?
+  - Example options: `$CODEX_HOME/gwtt/registry.json`, `$CODEX_HOME/gwtt/registry.toml`, or `$CODEX_HOME/gwtt/worktrees/registry.json`.
+  - Minimum recommended keys per entry: `task`, `repoRoot`, `worktreePath`, `createdAt`, and the “source ref” used to create it (branch/ref/commit).
+- **Sync UX:** What should the CLI surface look like?
+  - `gwtt sync <task> --apply|--overwrite` vs `gwtt sync apply <task>` / `gwtt sync overwrite <task>`.
+  - Confirmations: treat “apply/overwrite” as a second, explicit confirmation (skippable with `--yes`), similar to the existing destructive confirmations pattern.
+- **Restoration support:** Do we want a `restore` operation in the CLI (to mirror Codex App), or keep scope to create/sync/cleanup only?
 
 ## References
 - Codex App worktrees documentation: https://developers.openai.com/codex/app/worktrees/
@@ -74,4 +83,3 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
 
 ## Related Plans
 - (none)
-
