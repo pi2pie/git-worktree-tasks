@@ -98,7 +98,6 @@ func newStatusCommand() *cobra.Command {
 					if query == "" {
 						return fmt.Errorf("task query cannot be empty")
 					}
-					opts.strict = true
 				} else {
 					query, err = normalizeTaskQuery(args[0])
 					if err != nil {
@@ -119,7 +118,9 @@ func newStatusCommand() *cobra.Command {
 					}
 					opts.strict = true
 				}
-				opts.strict = true
+				if mode != modeCodex {
+					opts.strict = true
+				}
 			}
 
 			target := opts.target
@@ -160,7 +161,7 @@ func newStatusCommand() *cobra.Command {
 					if branch == "" {
 						branch = "detached"
 					}
-					if query != "" && task != query {
+					if query != "" && !matchesTask(task, query, opts.strict) {
 						continue
 					}
 				} else {
@@ -219,6 +220,9 @@ func newStatusCommand() *cobra.Command {
 					Ahead:        statusInfo.Ahead,
 					Behind:       statusInfo.Behind,
 				})
+				if query != "" && !opts.strict {
+					break
+				}
 			}
 
 			if mode != modeCodex && len(rows) == 0 {

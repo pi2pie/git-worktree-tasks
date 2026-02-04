@@ -200,6 +200,9 @@ func newListCommand() *cobra.Command {
 					continue
 				}
 				rows = append(rows, row)
+				if query != "" && !opts.strict {
+					break
+				}
 			}
 
 			if mode != modeCodex && opts.output == "raw" && len(rows) == 0 {
