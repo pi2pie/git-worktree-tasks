@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -45,6 +46,7 @@ func newListCommand() *cobra.Command {
 			mode := modeClassic
 			var codexHome string
 			var codexWorktrees string
+			var rawBase string
 			if cfg, ok := configFromContext(cmd.Context()); ok {
 				mode = cfg.Mode
 				if mode == modeCodex {
@@ -76,6 +78,11 @@ func newListCommand() *cobra.Command {
 					opts.strict = cfg.List.Strict
 				}
 			}
+			if mode == modeCodex && opts.output == "raw" && opts.field == "path" && !opts.abs {
+				if cwd, err := os.Getwd(); err == nil {
+					rawBase = cwd
+				}
+			}
 			repoRoot, err := repoRoot(ctx, runner)
 			if err != nil {
 				return err
@@ -94,7 +101,6 @@ func newListCommand() *cobra.Command {
 					if query == "" {
 						return fmt.Errorf("task query cannot be empty")
 					}
-					opts.strict = true
 				} else {
 					query, err = normalizeTaskQuery(args[0])
 					if err != nil {
@@ -163,17 +169,30 @@ func newListCommand() *cobra.Command {
 					Head:    worktree.ShortHash(wt.Head, shortHashLen),
 				}
 				if mode == modeCodex && opts.output == "raw" && field == "path" {
-					if codexRel == "" {
-						return fmt.Errorf("unable to derive codex worktree relative path for %q", wt.Path)
-					}
-					row.Path = filepath.Join("worktrees", codexRel)
-				}
-				if query != "" {
-					if mode == modeCodex {
-						if row.Task != query {
-							continue
+					if opts.abs {
+						if wtAbs == "" {
+							return fmt.Errorf("unable to derive codex worktree absolute path for %q", wt.Path)
 						}
-					} else if !matchesTask(row.Task, query, opts.strict) {
+						row.Path = wtAbs
+					} else {
+						if wtAbs == "" {
+							return fmt.Errorf("unable to derive codex worktree absolute path for %q", wt.Path)
+						}
+						if rawBase != "" {
+							if rel, err := filepath.Rel(rawBase, wtAbs); err == nil {
+								row.Path = rel
+								goto rawPathDone
+							}
+						}
+						if codexRel == "" {
+							return fmt.Errorf("unable to derive codex worktree relative path for %q", wt.Path)
+						}
+						row.Path = filepath.Join("worktrees", codexRel)
+					}
+				}
+			rawPathDone:
+				if query != "" {
+					if !matchesTask(row.Task, query, opts.strict) {
 						continue
 					}
 				}
