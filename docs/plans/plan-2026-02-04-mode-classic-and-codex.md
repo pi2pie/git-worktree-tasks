@@ -23,13 +23,13 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 
 ## Plan
 ### Phase 1: Docs & Spec Design
-- [ ] Update `docs/research-2026-02-04-mode-classic-vs-codex.md` to reflect final decisions as implementation progresses.
-- [ ] Update `docs/schemas/config-gwtt.md` to include `mode` and env var `GWTT_MODE`.
-- [ ] Write a short CLI spec section (either in the research doc or a new schema doc) covering:
-  - [ ] Codex-mode worktree selection: `<opaque-id>` resolution rules and error messages.
-  - [ ] Repo scoping strategy for `list/status` in codex mode (Git-derived, not naming-derived).
-  - [ ] `sync` conflict detection signals and the overwrite confirmation flow (`--yes` behavior).
-  - [ ] `cleanup` safety model (scope restriction, warnings, second confirmation, and “restore is best-effort” note).
+- [x] Update `docs/research-2026-02-04-mode-classic-vs-codex.md` to reflect final decisions as implementation progresses.
+- [x] Update `docs/schemas/config-gwtt.md` to include `mode` and env var `GWTT_MODE`.
+- [x] Write a short CLI spec section (either in the research doc or a new schema doc) covering:
+  - [x] Codex-mode worktree selection: `<opaque-id>` resolution rules and error messages.
+  - [x] Repo scoping strategy for `list/status` in codex mode (Git-derived, not naming-derived).
+  - [x] `sync` conflict detection signals and the overwrite confirmation flow (`--yes` behavior).
+  - [x] `cleanup` safety model (scope restriction, warnings, second confirmation, and “restore is best-effort” note).
 
 ### Phase 2: Code Implementation
 - [ ] Add global `--mode` persistent flag on `cli/root.go` and plumb mode into command execution (context/config).
@@ -91,4 +91,3 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 
 ## Related Research
 - `docs/research-2026-02-04-mode-classic-vs-codex.md`
-

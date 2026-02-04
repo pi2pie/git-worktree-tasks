@@ -54,12 +54,8 @@ To keep `classic` stable and keep `codex` aligned with Codex App:
 - **No “task branch” assumption:** detached worktrees mean we can’t infer branch names from task names.
 - **No arbitrary `--path` override:** codex-mode worktrees live under `$CODEX_HOME/worktrees`; allowing arbitrary paths would complicate cleanup, display, and registry invariants.
 - **Different command surface:** branch-merge workflows (`finish`) are replaced by sync workflows (`sync apply` / `sync overwrite`).
-- **Cleanup restrictions from Codex App:** Codex App will not automatically clean up a worktree if:
-  - a pinned conversation is tied to it,
-  - it was added to the sidebar,
-  - it’s more than 4 days old,
-  - you have more than 10 worktrees.
-  - Note: the “more than 4 days old” / “more than 10 worktrees” conditions are counterintuitive, but this is the wording in the official docs as of 2026-02-04.
+- **Cleanup restrictions from Codex App:** Codex App’s auto-cleanup is disabled in some cases (e.g., pinned conversation, added to sidebar, age > 4 days, worktree count > 10).
+  - Note: the “age > 4 days” / “count > 10” conditions are counterintuitive, but this is the wording in the official docs as of 2026-02-04.
 
 ### Path display differences (UX)
 Codex App uses a “variable-aware” presentation of paths (and the user specifically called out `$CODEX_HOME`):
@@ -95,19 +91,59 @@ Codex App uses a “variable-aware” presentation of paths (and the user specif
   - Use the filesystem `mtime` of the worktree directory as a pragmatic “last touched” signal.
   - Output format recommendation: RFC3339 in UTC for JSON/CSV; table output can display the same value (no additional config initially).
 
-## Open Questions
-- **Sync conflict detection:** Use predictable signals:
-  - Local checkout is dirty.
-  - Patch/apply/merge step fails.
-  - Both sides modified the same file (where we can detect it).
-- **Cleanup restrictions detection:** We likely cannot reliably detect “pinned” / “sidebar” / thread linkage without reading Codex App state.
-  - Decision: allow deletion with warnings + second confirmation (and keep deletion narrowly scoped to `$CODEX_HOME/worktrees/<opaque-id>`).
-- **Restoration support:** Keep scope to create/sync/list/status only for now.
-  - Open: if we ever add `restore`, it likely needs to integrate with Codex App’s snapshot state (i.e., app-owned data). Without that, `gwtt` can only delete disk folders and let the app restore opportunistically.
+## CLI Spec (Draft)
+
+### Mode resolution
+- Flag: `--mode` (`classic` or `codex`).
+- Env: `GWTT_MODE`.
+- Config: top-level `mode = "classic"|"codex"`.
+- Default: `classic`.
+
+### Codex home + worktrees root
+- Resolve Codex home from the `CODEX_HOME` env var; if unset, default to `~/.codex` (Codex App default).
+- Managed codex-mode worktrees are always under `$CODEX_HOME/worktrees/`.
+- Display paths under this root as `$CODEX_HOME/...` by default (unless `--abs` forces absolute).
+
+### Selection model (`<task>` in codex mode)
+- `<task>` is the exact `<opaque-id>` directory name under `$CODEX_HOME/worktrees`.
+- `gwtt list/status --mode=codex` should render `TASK=<opaque-id>` to make the identifier discoverable and copy/paste friendly.
+
+### Repo scoping (`list/status` in codex mode)
+- Use Git as the source of truth for “worktrees belonging to this repo”:
+  - Run `git -C <repoRoot> worktree list --porcelain`.
+  - Filter entries whose worktree path is under `$CODEX_HOME/worktrees/`.
+- Do not attempt to infer repo identity from `<opaque-id>` naming.
+
+### `sync` (codex mode)
+- CLI: `gwtt sync <opaque-id>` (default operation: apply worktree changes into the local checkout).
+- Conflict detection signals (predictable, conservative):
+  - Local checkout is dirty, or
+  - the apply/merge step fails, or
+  - both sides modified the same file (where detectable).
+- On conflict: prompt whether to “overwrite” (local -> worktree) and require a second confirmation; `--yes` bypasses the overwrite confirmation.
+- Keep Codex App parity: ignored files are not synced.
+
+### `cleanup` (codex mode)
+- Scope: only delete the on-disk directory at `$CODEX_HOME/worktrees/<opaque-id>` (free disk; do not touch classic paths).
+- Since pinned/sidebar/thread linkage is not reliably detectable without reading Codex App state:
+  - Always show a prominent warning (“may break pinned/sidebar restore expectations”) and require an extra confirmation (skippable with `--yes`).
+  - Treat restore as best-effort: `gwtt` cannot guarantee a snapshot exists before manual deletion.
+
+### `status` metadata addition: `modified_time`
+- Add `modified_time` derived from filesystem `mtime` of the worktree directory.
+- Format: RFC3339 UTC for JSON/CSV; table output prints the same string.
+- No date-format config in the first iteration.
+
+## Open Questions (Remaining)
+- Can we (safely) detect any Codex cleanup-restriction signals from disk without coupling `gwtt` to Codex’s internal storage formats?
+- What is the most user-friendly confirmation wording for “overwrite” (sync) and “yolo delete” (cleanup) that still prevents accidents?
+
+## Notes
+- Restoration remains out of scope: keep to create/sync/list/status only for now; a future `restore` likely needs to integrate with Codex App snapshot state.
 
 ## References
 - Codex App worktrees documentation (includes cleanup + FAQ): https://developers.openai.com/codex/app/worktrees/
 - Git worktree manual: https://git-scm.com/docs/git-worktree
 
 ## Related Plans
-- (none)
+- `docs/plans/plan-2026-02-04-mode-classic-and-codex.md`
