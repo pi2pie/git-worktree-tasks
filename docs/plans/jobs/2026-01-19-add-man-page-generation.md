@@ -1,6 +1,6 @@
 ---
 title: "Add man(1) generation and install wiring"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: Codex
 ---

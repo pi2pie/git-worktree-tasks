@@ -1,6 +1,6 @@
 ---
 title: "Dynamic short hash length"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: "Codex, GitHub Copilot"
 ---

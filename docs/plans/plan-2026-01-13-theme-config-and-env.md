@@ -1,6 +1,6 @@
 ---
 title: "Theme config and env"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: codex
 ---

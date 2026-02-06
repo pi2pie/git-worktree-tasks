@@ -1,6 +1,6 @@
 ---
 title: "Fix codex raw/absolute path handling"
-date: 2026-02-04
+created-date: 2026-02-04
 status: completed
 agent: codex
 ---

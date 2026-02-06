@@ -1,6 +1,6 @@
 ---
 title: "Mode Flag: classic vs codex"
-date: 2026-02-04
+created-date: 2026-02-04
 modified-date: 2026-02-04
 status: completed
 agent: codex

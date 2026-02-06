@@ -1,6 +1,6 @@
 ---
 title: "Worktree Operations Matrix"
-date: 2026-01-12
+created-date: 2026-01-12
 status: completed
 agent: codex
 ---

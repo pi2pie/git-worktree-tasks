@@ -1,6 +1,6 @@
 ---
 title: "Extensible config rollout"
-date: 2026-01-27
+created-date: 2026-01-27
 status: completed
 agent: codex
 ---

@@ -1,6 +1,6 @@
 ---
 title: "Add project_root.go unit tests and documentation"
-date: 2026-01-27
+created-date: 2026-01-27
 status: completed
 agent: copilot
 ---

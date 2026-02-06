@@ -1,6 +1,6 @@
 ---
 title: "Make fuzzy query return first match (list/status)"
-date: 2026-02-04
+created-date: 2026-02-04
 status: completed
 agent: codex
 ---

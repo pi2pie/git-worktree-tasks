@@ -1,6 +1,6 @@
 ---
 title: "Go CLI context propagation and status robustness"
-date: 2026-01-26
+created-date: 2026-01-26
 status: completed
 modified-date: 2026-01-27
 agent: codex

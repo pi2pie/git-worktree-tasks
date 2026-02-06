@@ -1,6 +1,6 @@
 ---
 title: "Codex Skill Path Refactor"
-date: 2026-02-04
+created-date: 2026-02-04
 status: completed
 agent: codex
 ---

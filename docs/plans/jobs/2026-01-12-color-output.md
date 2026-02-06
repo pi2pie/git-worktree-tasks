@@ -1,6 +1,6 @@
 ---
 title: "Implement CLI color output and --nocolor flag"
-date: 2026-01-12
+created-date: 2026-01-12
 status: completed
 agent: codex
 ---

@@ -1,6 +1,6 @@
 ---
 title: "CLI context propagation and status parsing"
-date: 2026-01-26
+created-date: 2026-01-26
 status: completed
 agent: codex
 ---

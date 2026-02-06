@@ -1,6 +1,6 @@
 ---
 title: "Empty-history handling and friendly errors"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: Codex
 ---

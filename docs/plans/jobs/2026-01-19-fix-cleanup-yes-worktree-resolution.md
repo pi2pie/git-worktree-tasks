@@ -1,6 +1,6 @@
 ---
 title: "Fix cleanup worktree resolution"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: codex
 ---

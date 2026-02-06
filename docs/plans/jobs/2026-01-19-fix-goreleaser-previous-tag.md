@@ -1,6 +1,6 @@
 ---
 title: "Fix GoReleaser previous tag detection"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: codex
 ---

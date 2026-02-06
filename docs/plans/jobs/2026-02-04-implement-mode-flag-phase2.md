@@ -1,6 +1,6 @@
 ---
 title: "Implement --mode and codex-mode commands (Phase 2)"
-date: 2026-02-04
+created-date: 2026-02-04
 status: completed
 agent: codex
 ---

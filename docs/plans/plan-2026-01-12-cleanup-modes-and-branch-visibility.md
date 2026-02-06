@@ -1,6 +1,6 @@
 ---
 title: "Clarify cleanup modes and branch visibility"
-date: 2026-01-12
+created-date: 2026-01-12
 status: completed
 agent: codex
 ---

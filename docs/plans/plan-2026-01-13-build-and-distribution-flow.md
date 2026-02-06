@@ -1,6 +1,6 @@
 ---
 title: "Build flow and installation strategy for gwtt command"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: Zed Agent
 ---

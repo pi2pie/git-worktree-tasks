@@ -1,6 +1,6 @@
 ---
 title: "TOML config options for gwtt"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: codex
 ---

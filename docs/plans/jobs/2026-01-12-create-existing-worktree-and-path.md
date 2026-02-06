@@ -1,6 +1,6 @@
 ---
 title: "Create existing worktree handling and path override"
-date: 2026-01-12
+created-date: 2026-01-12
 status: completed
 agent: codex
 ---

@@ -1,6 +1,6 @@
 ---
 title: "Create default base selection"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: Codex
 ---

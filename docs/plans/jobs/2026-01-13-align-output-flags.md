@@ -1,6 +1,6 @@
 ---
 title: "Align output flags and list filtering"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: codex
 ---

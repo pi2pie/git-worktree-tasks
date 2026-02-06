@@ -1,6 +1,6 @@
 ---
 title: "Skip main worktree when resolving cleanup by branch"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: codex
 ---

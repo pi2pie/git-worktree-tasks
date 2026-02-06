@@ -1,6 +1,6 @@
 ---
 title: "Make --themes available at root"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: codex
 ---

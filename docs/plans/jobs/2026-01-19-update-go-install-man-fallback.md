@@ -1,6 +1,6 @@
 ---
 title: "Update go-install man page fallback"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: codex
 ---

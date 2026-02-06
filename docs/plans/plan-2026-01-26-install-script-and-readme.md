@@ -1,6 +1,6 @@
 ---
 title: "Install Script + README Clarity for Binary Names"
-date: 2026-01-26
+created-date: 2026-01-26
 status: active
 agent: codex
 ---

@@ -1,6 +1,6 @@
 ---
 title: "Auto-detect existing branch on create"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: codex
 ---

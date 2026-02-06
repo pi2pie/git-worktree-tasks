@@ -1,6 +1,6 @@
 ---
 title: "Phase 3 tests for codex mode"
-date: 2026-02-04
+created-date: 2026-02-04
 modified-date: 2026-02-04
 status: completed
 agent: codex

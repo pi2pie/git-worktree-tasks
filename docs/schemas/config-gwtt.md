@@ -1,6 +1,6 @@
 ---
 title: "gwtt configuration schema"
-date: 2026-01-27
+created-date: 2026-01-27
 modified-date: 2026-02-04
 status: in-progress
 agent: codex

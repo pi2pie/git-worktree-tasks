@@ -1,6 +1,6 @@
 ---
 title: "Homebrew integration strategies for git-worktree-tasks"
-date: 2026-01-13
+created-date: 2026-01-13
 modified: 2026-01-18
 status: draft
 agent: Zed Agent

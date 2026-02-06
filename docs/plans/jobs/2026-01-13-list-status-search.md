@@ -1,6 +1,6 @@
 ---
 title: "Add list/status search and repo base name resolution"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: codex
 ---

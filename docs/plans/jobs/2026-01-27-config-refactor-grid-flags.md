@@ -1,6 +1,6 @@
 ---
 title: "Config refactor and grid flags preservation"
-date: 2026-01-27
+created-date: 2026-01-27
 status: completed
 agent: github-copilot
 ---

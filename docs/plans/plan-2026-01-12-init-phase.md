@@ -1,6 +1,6 @@
 ---
 title: "Init Phase Plan"
-date: 2026-01-12
+created-date: 2026-01-12
 status: active
 agent: codex
 ---

@@ -1,6 +1,6 @@
 ---
 title: "Phase 2 config loader implementation"
-date: 2026-01-27
+created-date: 2026-01-27
 status: completed
 agent: codex
 ---
