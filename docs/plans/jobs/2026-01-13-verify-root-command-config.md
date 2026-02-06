@@ -20,6 +20,7 @@ Examined the `gitWorkTreeCommand()` function (lines 47-53 in `cli/root.go`) to c
 ## Findings
 
 The configuration is **correct**. The `gwtt` alias is properly defined and provides users with a convenient shorthand for invoking the CLI tool. Users can call the tool using either:
+
 - `git-worktree-tasks [subcommand]` (full name)
 - `gwtt [subcommand]` (alias shortcut)
 

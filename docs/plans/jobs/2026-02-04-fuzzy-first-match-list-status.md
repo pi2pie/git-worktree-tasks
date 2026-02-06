@@ -6,5 +6,5 @@ agent: codex
 ---
 
 ## Summary
-When a task query is provided without `--strict`, `list` and `status` now return only the first matching worktree (classic and codex modes) for consistent fuzzy retrieval.
 
+When a task query is provided without `--strict`, `list` and `status` now return only the first matching worktree (classic and codex modes) for consistent fuzzy retrieval.

@@ -7,9 +7,11 @@ agent: codex
 ---
 
 ## Goal
+
 Add a new global `--mode` (`classic` default, `codex` optional) to support Codex App-style worktrees while keeping current behavior stable and non-breaking.
 
 ## Scope
+
 - `--mode` flag + `GWTT_MODE` env + config default (flag > env > config > default).
 - Codex-mode worktree discovery under `$CODEX_HOME/worktrees/**` with repo-scoped filtering via `git worktree list --porcelain`.
 - Codex-mode selection model: `<task>` is the exact `<opaque-id>` directory name under `$CODEX_HOME/worktrees`.
@@ -19,12 +21,15 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 - Add `modified_time` to `status` output (RFC3339 UTC).
 
 ## Non-Goals
+
 - No registry/state files (no `registry.json` / extra TOML) for codex mode.
 - No branch-based workflows in codex mode (no `finish` in codex mode; no `create --branch` in codex mode).
 - No `restore` command in this phase.
 
 ## Plan
+
 ### Phase 1: Docs & Spec Design
+
 - [x] Update `docs/research-2026-02-04-mode-classic-vs-codex.md` to reflect final decisions as implementation progresses.
 - [x] Update `docs/schemas/config-gwtt.md` to include `mode` and env var `GWTT_MODE`.
 - [x] Write a short CLI spec section (either in the research doc or a new schema doc) covering:
@@ -34,6 +39,7 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
   - [x] `cleanup` safety model (scope restriction, warnings, second confirmation, and “restore is best-effort” note).
 
 ### Phase 2: Code Implementation
+
 - [x] Add global `--mode` persistent flag on `cli/root.go` and plumb mode into command execution (context/config).
 - [x] Add mode to config resolution:
   - [x] Env: `GWTT_MODE`.
@@ -63,6 +69,7 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 - [x] Confirmed app-side worktree shell/run-script issues are out of CLI scope and tracked upstream.
 
 ### Phase 3: Unit Test Verification
+
 - [x] Add tests for `mode` precedence and validation (flag/env/config/default).
 - [x] Add tests for codex-mode list/status filtering (repo-scoped via `git worktree list` + `$CODEX_HOME/worktrees` prefix filter).
 - [x] Add tests for `<opaque-id>` derivation and path rendering (`$CODEX_HOME` display).
@@ -71,6 +78,7 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 - [x] Add tests for codex cleanup scope restriction + confirmation flow.
 
 ### Phase 4: README / CLI Docs Update
+
 - [x] Update `README.md`:
   - [x] Document `--mode`, `GWTT_MODE`, and config `mode`.
   - [x] Add codex-mode usage examples for `list/status/apply/cleanup`.
@@ -79,11 +87,13 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 - [x] If applicable, update any man/help text sources under `man/` to reflect new commands/flags.
 
 ### Phase 5: Verify Doc Statuses
+
 - [x] Ensure this plan’s `status` matches the actual phase progress (`active` -> `completed` when done).
 - [x] Update the research doc’s `status` to `completed` once decisions are implemented and verified.
 - [x] Ensure any schema/doc updates have consistent status and dates (`modified-date` as needed).
 
 ## Acceptance Criteria
+
 - Default behavior (no `--mode`, no `GWTT_MODE`, no config) remains unchanged.
 - `--mode=codex` enables codex-specific list/status/apply/cleanup without impacting classic users.
 - Codex-mode selection uses `<opaque-id>` reliably and errors clearly when not found/ambiguous.
@@ -91,9 +101,11 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 - Codex-mode cleanup is narrowly scoped and always warns + confirms before deletion.
 
 ## Risks / Notes
+
 - Codex App “pinned/sidebar/thread linkage” signals may not be detectable from disk without reading Codex’s internal state; default to warnings + a second confirmation when uncertain.
 - `apply` semantics are easy to get subtly wrong; keep the initial implementation conservative and well-tested.
 - Track open worktree issues and shell/run-script reports: https://github.com/openai/codex/issues?q=is%3Aissue%20state%3Aopen%20worktree (example: “Worktrees keep forgetting the "Run" script”, Feb 3, 2026).
 
 ## Related Research
+
 - `docs/research-2026-02-04-mode-classic-vs-codex.md`

@@ -127,14 +127,12 @@ make go-uninstall
 
 > **Windows PATH Note:** If you install `gwtt.exe` into a custom folder (e.g., `C:\Users\<you>\bin`), add that folder to your PATH and open a new terminal to pick it up.
 
-
 > [!Note]
 > **Ownership Change (v0.0.7+)**
-> 
+>
 > The repository ownership changed after v0.0.6. The old `dev-pi2pie` path no longer exists, so use the new module path for all installs and imports:
-> 
+>
 > - **v0.0.7 and later:** `github.com/pi2pie/git-worktree-tasks`
-
 
 ## Binary Naming and Shell Configuration
 
@@ -144,15 +142,16 @@ make go-uninstall
 
 Set up the `gwtt` alias for convenience:
 
-| Shell | Config File | Alias Syntax |
-|-------|-------------|--------------|
-| Bash  | `~/.bashrc` | `alias gwtt="git-worktree-tasks"` |
-| Zsh   | `~/.zshrc`  | `alias gwtt="git-worktree-tasks"` |
-| Fish  | `~/.config/fish/config.fish` | `alias gwtt git-worktree-tasks` |
+| Shell | Config File                  | Alias Syntax                      |
+| ----- | ---------------------------- | --------------------------------- |
+| Bash  | `~/.bashrc`                  | `alias gwtt="git-worktree-tasks"` |
+| Zsh   | `~/.zshrc`                   | `alias gwtt="git-worktree-tasks"` |
+| Fish  | `~/.config/fish/config.fish` | `alias gwtt git-worktree-tasks`   |
 
 After adding, reload your shell (`source ~/.bashrc`, `source ~/.zshrc`, or `exec fish`).
 
 **Alternative:** Create a symlink:
+
 ```bash
 ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 ```
@@ -244,6 +243,7 @@ Project: `gwtt.config.toml` or `gwtt.toml` in the repo root
 User: `$HOME/.config/gwtt/config.toml`
 
 **Minimal config:**
+
 ```toml
 [theme]
 name = "nord"
@@ -255,14 +255,14 @@ name = "nord"
 
 ### Commands Overview
 
-| Command   | Alias | Description |
-|-----------|-------|-------------|
+| Command   | Alias | Description                                                          |
+| --------- | ----- | -------------------------------------------------------------------- |
 | `apply`   |       | Apply Codex worktree changes to the local checkout (codex mode only) |
-| `create`  |       | Create a worktree and branch for a task |
-| `list`    | `ls`  | List task worktrees |
-| `status`  |       | Show detailed worktree status |
-| `finish`  |       | Merge a task branch into target |
-| `cleanup` | `rm`  | Remove a task worktree and/or branch |
+| `create`  |       | Create a worktree and branch for a task                              |
+| `list`    | `ls`  | List task worktrees                                                  |
+| `status`  |       | Show detailed worktree status                                        |
+| `finish`  |       | Merge a task branch into target                                      |
+| `cleanup` | `rm`  | Remove a task worktree and/or branch                                 |
 
 ### Creating Worktrees
 
@@ -293,6 +293,7 @@ gwtt create "my-task" --dry-run
 | `--dry-run` | | Show git commands without executing |
 
 **Notes:**
+
 - The default base is the current local branch (for example `main`, `master`, or `dev`).
 - If you are in a detached HEAD state, you must pass `--base` explicitly.
 
@@ -409,6 +410,7 @@ gwtt --mode codex apply <opaque-id> --dry-run
 ```
 
 **Notes:**
+
 - In codex mode, `<opaque-id>` is the directory directly under `$CODEX_HOME/worktrees`.
 - If conflicts are detected, `gwtt` prompts to overwrite the Codex worktree (second confirmation). `--yes` skips prompts.
 
@@ -452,23 +454,23 @@ The `--output` (`-o`) and `--field` (`-f`) flags enable powerful shell integrati
 
 ### Output Formats
 
-| Format | Description | Available In |
-|--------|-------------|--------------|
+| Format  | Description                    | Available In     |
+| ------- | ------------------------------ | ---------------- |
 | `table` | Human-readable table (default) | `list`, `status` |
-| `json` | JSON array | `list`, `status` |
-| `csv` | CSV with headers | `list`, `status` |
-| `raw` | Single value, no decoration | `create`, `list` |
-| `text` | Styled text output (default) | `create` |
+| `json`  | JSON array                     | `list`, `status` |
+| `csv`   | CSV with headers               | `list`, `status` |
+| `raw`   | Single value, no decoration    | `create`, `list` |
+| `text`  | Styled text output (default)   | `create`         |
 
 ### Field Selection (for `--output raw`)
 
 When using `--output raw` with `list`, specify which field to output:
 
-| Field | Description |
-|-------|-------------|
-| `path` | Worktree path (default) |
-| `task` | Task name |
-| `branch` | Branch name |
+| Field    | Description             |
+| -------- | ----------------------- |
+| `path`   | Worktree path (default) |
+| `task`   | Task name               |
+| `branch` | Branch name             |
 
 ### Piping Examples
 
@@ -547,6 +549,7 @@ gwtt-new() {
 ### Raw Output Fallback
 
 When using `--output raw` with `list`:
+
 - If no matching worktree exists but the branch does, returns the main worktree path
 - Requires either a task filter or `--branch` flag
 
@@ -617,6 +620,7 @@ export PATH="$(go env GOPATH)/bin:$PATH"
 ### Shell Alias Not Working
 
 Reload your shell after adding the alias:
+
 ```bash
 source ~/.bashrc   # Bash
 source ~/.zshrc    # Zsh

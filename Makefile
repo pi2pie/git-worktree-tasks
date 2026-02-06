@@ -1,7 +1,8 @@
-.PHONY: help build man go-build install uninstall go-install go-uninstall clean
+.PHONY: help build man go-build install uninstall go-install go-uninstall markdown-fmt markdown-fmt-check clean
 
 # Build directory
 DIST_DIR := dist
+MD_FILES := $(shell git ls-files '*.md' | rg -v '^\.agents/skills/' || true)
 
 # Default target
 help:
@@ -22,6 +23,8 @@ help:
 	@echo ""
 	@echo "Development:"
 	@echo "  make help            Show this help message"
+	@echo "  make markdown-fmt    Format Markdown files with oxfmt"
+	@echo "  make markdown-fmt-check  Check Markdown formatting with oxfmt"
 	@echo ""
 
 # Build both binaries to dist/ directory
@@ -72,6 +75,24 @@ go-install:
 .PHONY: go-uninstall
 go-uninstall:
 	@bash ./scripts/go-uninstall.sh
+
+# Format Markdown files in-place using oxfmt
+.PHONY: markdown-fmt
+markdown-fmt:
+	@if [ -z "$(MD_FILES)" ]; then \
+		echo "No Markdown files found."; \
+	else \
+		npx oxfmt --write $(MD_FILES); \
+	fi
+
+# Check Markdown formatting using oxfmt
+.PHONY: markdown-fmt-check
+markdown-fmt-check:
+	@if [ -z "$(MD_FILES)" ]; then \
+		echo "No Markdown files found."; \
+	else \
+		npx oxfmt --check $(MD_FILES); \
+	fi
 
 # Clean up binaries in dist/ directory
 .PHONY: clean

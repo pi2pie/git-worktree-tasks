@@ -6,9 +6,11 @@ agent: codex
 ---
 
 ## Goal
+
 Identify optional configuration areas beyond theme that could be safely exposed to users, and outline a TOML shape that stays extensible and idiomatic for Go.
 
 ## Key Findings
+
 - **Current config scope is theme-only** with fixed file locations and precedence (flag > env > project config > user config > default). This flow can be generalized for other settings without adding new dependencies. [^theme-config] [^readme-config]
 - **Most CLI flags map cleanly to defaults** that users might want to set once: output format (`list`, `status`, `create`), table grid, absolute paths, strict task matching, default targets, and cleanup behaviors. [^cli-create] [^cli-list] [^cli-status] [^cli-finish] [^cli-cleanup]
 - **Naming and path conventions are centralized** in `internal/worktree/naming.go`, which makes them a natural candidate for a configurable strategy (prefix, separator, or template) but requires compatibility safeguards because `TaskFromPath` assumes a fixed prefix format. [^worktree-naming]
@@ -20,6 +22,7 @@ Identify optional configuration areas beyond theme that could be safely exposed 
 - **Merge mode should be exclusive**; only one of `ff` (default), `no-ff`, `squash`, or `rebase` should be active to avoid ambiguous or conflicting semantics. [^cli-finish]
 
 ## Candidate Optional Config Sections
+
 The following are low-risk candidates because they are already CLI flags or deterministic defaults:
 
 1. **[ui]**
@@ -57,6 +60,7 @@ The following are low-risk candidates because they are already CLI flags or dete
    - `confirm`
 
 ## Extensible TOML Shape (Draft)
+
 A minimal, additive structure that avoids breaking existing `theme` parsing:
 
 ```toml
@@ -106,10 +110,12 @@ confirm = true
 ```
 
 Notes:
+
 - Keep `theme` as-is to preserve compatibility.
 - `create.path.format` would require updating `TaskFromPath` logic or providing a parallel lookup strategy to avoid breaking list/status discovery for non-default naming.
 
 ## Implications or Recommendations
+
 - **Start with config for existing CLI defaults** (output format, grid, absolute paths, confirm toggles) because they are low-risk and align with current option handling.
 - **Treat naming/path customization as a second phase** due to the coupling in `TaskFromPath` and potential mismatch with existing worktrees; consider supporting a templated suffix/prefix that still allows parsing. [^worktree-naming]
 - **Keep precedence consistent with theme** (flags > env > project > user > default) to reduce user confusion and keep logic predictable. [^theme-config]
@@ -118,15 +124,25 @@ Notes:
 - **Prefer explicit, typed config structs** for each section to keep Go code simple and avoid "magic" config behavior. (Inference based on current code style.)
 
 ## Open Questions
+
 - None.
 
 ## References
+
 [^theme-config]: `internal/config/theme.go`
+
 [^cli-root]: `cli/root.go`
+
 [^cli-create]: `cli/create.go`
+
 [^cli-list]: `cli/list.go`
+
 [^cli-status]: `cli/status.go`
+
 [^cli-finish]: `cli/finish.go`
+
 [^cli-cleanup]: `cli/cleanup.go`
+
 [^worktree-naming]: `internal/worktree/naming.go`
+
 [^readme-config]: `README.md`

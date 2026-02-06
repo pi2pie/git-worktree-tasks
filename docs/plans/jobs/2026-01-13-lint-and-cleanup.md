@@ -6,9 +6,11 @@ agent: GitHub Copilot
 ---
 
 ## Description
+
 Removing unused `state *runState` parameters from CLI subcommand constructors to improve code quality and reduce noise.
 
 ## Tasks
+
 - [x] Remove `state` param from `cli/cleanup.go`
 - [x] Remove `state` param from `cli/create.go`
 - [x] Remove `state` param from `cli/finish.go`

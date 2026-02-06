@@ -53,12 +53,12 @@ Git uses **packed object count**, not commit count. Object count is typically 5-
 
 ### Real-World Examples
 
-| Repository | Commits | Objects (est.) | Hash Length |
-|------------|---------|----------------|-------------|
-| Small project | < 1K | < 10K | 7 chars |
-| Medium project | ~3K | ~30K | 7-8 chars |
-| Large project | ~30K | ~300K | 8-10 chars |
-| Linux kernel | ~1M | ~7M | 12 chars |
+| Repository     | Commits | Objects (est.) | Hash Length |
+| -------------- | ------- | -------------- | ----------- |
+| Small project  | < 1K    | < 10K          | 7 chars     |
+| Medium project | ~3K     | ~30K           | 7-8 chars   |
+| Large project  | ~30K    | ~300K          | 8-10 chars  |
+| Linux kernel   | ~1M     | ~7M            | 12 chars    |
 
 ## References
 

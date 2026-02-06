@@ -6,8 +6,10 @@ agent: codex
 ---
 
 ## Scope
+
 - Add a global `--nocolor` flag to disable ANSI styling.
 - Use lipgloss for CLI prompts, success messages, and table output.
 
 ## Notes
+
 - Preserve JSON/raw outputs without ANSI codes.

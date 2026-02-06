@@ -22,23 +22,27 @@ Homebrew is a popular package manager for macOS and Linux. It uses "formulas" (R
 ### Approach 1: Global Homebrew PR (homebrew-core)
 
 **Process:**
+
 - Submit `git-worktree-tasks.rb` formula to `homebrew/homebrew-core` GitHub repository
 - Homebrew maintainers review and merge
 - Users install directly: `brew install git-worktree-tasks`
 
 **Advantages:**
+
 - Single, standard installation method
 - Official Homebrew distribution
 - No additional repository to maintain
 - Higher discoverability
 
 **Disadvantages:**
+
 - Longer review process (days to weeks)
 - Strict Homebrew guidelines and requirements
 - Less control over updates and versioning
 - Requires stable, tagged releases in main repository
 
 **Requirements:**
+
 - Project must be stable and actively maintained
 - Clear, tagged releases (e.g., `v0.0.5`)
 - Open source with compatible license
@@ -47,12 +51,14 @@ Homebrew is a popular package manager for macOS and Linux. It uses "formulas" (R
 ### Approach 2: Custom Tap Repository
 
 **Process:**
+
 - Create separate GitHub repository: `pi2pie/homebrew-git-worktree-tasks`
 - Maintain `Formula/git-worktree-tasks.rb` in the tap repository
 - Users add tap first: `brew tap pi2pie/git-worktree-tasks`
 - Then install: `brew install git-worktree-tasks`
 
 **Advantages:**
+
 - Complete control over formula and updates
 - Faster deployment (no review process)
 - Can update formula independently of main project
@@ -60,12 +66,14 @@ Homebrew is a popular package manager for macOS and Linux. It uses "formulas" (R
 - Can include additional formulas if needed
 
 **Disadvantages:**
+
 - Users must remember to tap first (extra step)
 - Requires maintaining additional repository
 - Lower discoverability compared to homebrew-core
 - User must manage tap updates separately
 
 **Requirements:**
+
 - Separate GitHub repository
 - Proper repository naming convention
 - CI/CD to automate formula updates
@@ -143,6 +151,7 @@ brew install git-worktree-tasks
 ```
 
 One-liner variant:
+
 ```bash
 brew install pi2pie/git-worktree-tasks/git-worktree-tasks
 ```
@@ -156,16 +165,19 @@ brew install git-worktree-tasks
 ## Implementation Roadmap
 
 ### Phase 1: Foundation (Current)
+
 - ✅ Establish build process (Makefile)
 - ⏳ Set up stable CI/CD with goreleaser
 
 ### Phase 2: Custom Tap
+
 - Create `homebrew-git-worktree-tasks` repository
 - Write and test `git-worktree-tasks.rb` formula
 - Document custom tap installation in README
 - Automate formula updates via CI/CD
 
 ### Phase 3: Homebrew Core (Optional, Future)
+
 - Prepare project for homebrew-core submission
 - Follow Homebrew guidelines and standards
 - Submit PR to `homebrew/homebrew-core`

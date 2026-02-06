@@ -6,5 +6,5 @@ agent: codex
 ---
 
 ## Summary
-Adjusted codex-mode `list --output raw` to return paths relative to the current working directory when `--abs` is not set.
 
+Adjusted codex-mode `list --output raw` to return paths relative to the current working directory when `--abs` is not set.

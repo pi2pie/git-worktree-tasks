@@ -6,9 +6,11 @@ agent: codex
 ---
 
 ## Goal
+
 Define detailed, consistent operation behaviors for creating, merging, and cleaning up git worktrees tied to task-name branches.
 
 ## Key Findings
+
 - A clean separation of concerns keeps the CLI predictable: (1) create worktree+branch, (2) merge into target, (3) cleanup (worktree, branch) with explicit flags.
 - The shell reference implies a naming convention: `../<repo>_<task>` for worktree paths and a sanitized `<task>` for branch names. We should codify the same logic with explicit validation.
 - Avoid implicit destructive actions: deletion of worktrees and branches should be explicit, or controlled with flags on `finish`.
@@ -17,6 +19,7 @@ Define detailed, consistent operation behaviors for creating, merging, and clean
 ## Operations Matrix
 
 ### Create (worktree + branch)
+
 - Input: `task` (required), `base` (optional, default `main`), `path` (optional).
 - Behavior:
   - Sanitize branch name from task (replace non `[A-Za-z0-9_/-]` with `-`).
@@ -25,6 +28,7 @@ Define detailed, consistent operation behaviors for creating, merging, and clean
   - Command: `git worktree add -b <branch> <path> <base>`.
 
 ### Finish (merge + optional cleanup)
+
 - Input: `task` (required), `target` (default `main`).
 - Behavior:
   - Ensure clean index in target branch before merge.
@@ -36,6 +40,7 @@ Define detailed, consistent operation behaviors for creating, merging, and clean
   - Always `git worktree prune` when removing worktree.
 
 ### Cleanup (no merge)
+
 - Input: `task` (required).
 - Flags:
   - `--remove-worktree` (default true)
@@ -45,6 +50,7 @@ Define detailed, consistent operation behaviors for creating, merging, and clean
   - If `--remove-branch`, delete branch (`-d` by default, `-D` with `--force`).
 
 ### List / Status
+
 - Input: none; optional filters by task or branch.
 - Modes:
   - Simple: show task, branch, path, and whether the worktree is present.
@@ -55,24 +61,29 @@ Define detailed, consistent operation behaviors for creating, merging, and clean
 - Behavior: read from `git worktree list --porcelain` and map paths to tasks using the fixed naming convention.
 
 ## Safety Checks
+
 - Ensure task worktree is not the current working directory before removal.
 - Provide `--dry-run` for every destructive command.
 - Require confirmation (or `--yes`) when deleting branches or worktrees.
 
 ## Edge Cases
+
 - Branch exists but worktree missing: allow `cleanup --remove-branch`.
 - Worktree exists but branch deleted: allow `cleanup --remove-worktree` and print warning.
 - Merge conflicts: abort `finish` and keep worktree/branch intact.
 - Base/target branch doesn't exist locally: optionally fetch or error.
 
 ## Implications or Recommendations
+
 - Provide a `validate` subcommand (or internal validator) to preflight operations.
 - Surface a `status`/`list` command to show active task worktrees.
 
 ## Open Questions
+
 - (resolved) Worktree path is fixed to `../<repo>_<task>`; task name should be slugified consistently.
 - (resolved) `finish` requires a second confirmation before deleting worktree/branch; provide bypass flag for full cleanup. Support combinations like remove-worktree-only. Confirm which worktree to remove is scoped to the task, not a global prune.
 - (resolved) Merge modes should support `--squash`, `--no-ff`, and `--rebase`; default is standard `git merge` behavior.
 
 ## Related Plans
+
 - docs/plans/plan-2026-01-12-init-phase.md
