@@ -2,7 +2,7 @@
 title: "Codex apply two-way directions and cli extraction prep"
 created-date: 2026-02-07
 modified-date: 2026-02-07
-status: active
+status: completed
 agent: codex
 ---
 
@@ -62,19 +62,19 @@ Implement a two-way `apply`/`overwrite` command model in codex mode with explici
 
 ### Phase 6: Apply File-Split Refactor
 
-- [ ] Split command wiring/flags into `cli/apply_command.go`.
-- [ ] Split codex worktree resolution and validation into `cli/apply_resolve.go`.
-- [ ] Split conflict detection helpers into `cli/apply_conflicts.go`.
-- [ ] Split direction-agnostic transfer logic into `cli/apply_transfer.go`.
-- [ ] Split temp patch + file copy helpers into `cli/apply_files.go`.
+- [x] Split command wiring/flags into `cli/apply_command.go`.
+- [x] Split codex worktree resolution and validation into `cli/apply_resolve.go`.
+- [x] Split conflict detection helpers into `cli/apply_conflicts.go`.
+- [x] Split direction-agnostic transfer logic into `cli/apply_transfer.go`.
+- [x] Split temp patch + file copy helpers into `cli/apply_files.go`.
 
 ### Phase 7: Post-Refactor Verify and Docs Pass
 
-- [ ] Run full Go test suite and ensure no behavior regressions.
-- [ ] Update/add tests where refactor changed package/file boundaries.
-- [ ] Re-verify command help text for `apply`/`overwrite`/flags.
-- [ ] Reconcile README and man pages with final refactored behavior.
-- [ ] Update related plan/research/job docs and mark completion status.
+- [x] Run full Go test suite and ensure no behavior regressions.
+- [x] Update/add tests where refactor changed package/file boundaries.
+- [x] Re-verify command help text for `apply`/`overwrite`/flags.
+- [x] Reconcile README and man pages with final refactored behavior.
+- [x] Update related plan/research/job docs and mark completion status.
 
 ## Acceptance Criteria
 
@@ -87,7 +87,7 @@ Implement a two-way `apply`/`overwrite` command model in codex mode with explici
 
 - Confirmation wording must remain clear when destructive destination reset is involved.
 - Refactor-first approach lowers risk but can surface latent coupling in `cli`.
-- `cli/apply.go` remains intentionally consolidated for the first behavior cut; file split refactor is tracked in Phase 6.
+- Phase 6 completed the `apply` file split (`apply_command`, `apply_resolve`, `apply_conflicts`, `apply_transfer`, `apply_files`), reducing coupling in command internals.
 
 ## Related Research
 

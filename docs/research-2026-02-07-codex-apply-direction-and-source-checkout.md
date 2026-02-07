@@ -2,7 +2,7 @@
 title: "Codex apply direction and source checkout behavior"
 created-date: 2026-02-07
 modified-date: 2026-02-07
-status: in-progress
+status: completed
 agent: codex
 ---
 
@@ -49,7 +49,7 @@ Define a clearer, less surprising `gwtt apply` model in `--mode=codex` by making
   - whether overwrite/reset will occur,
   - summary of what is expected to change.
 
-### `cli/apply.go` is doing too much in one file
+### `cli/apply.go` was doing too much in one file (resolved in Phase 6)
 
 - The file contains command wiring, worktree resolution, conflict detection, transfer logic, patch I/O, and file copying.
 - There is duplicated transfer logic between forward/reverse paths, increasing maintenance cost and making direction changes riskier.
@@ -134,9 +134,16 @@ Apply vs overwrite matrix:
   - dry-run plan-style output with `plan`, `preflight`, and `actions` sections
   - conflict output updated with explicit overwrite next-step guidance
   - README/man/help updates for `apply` + `overwrite` semantics
-- Pending:
-  - split `cli/apply.go` into focused files (`apply_command`, `apply_resolve`, `apply_conflicts`, `apply_transfer`, `apply_files`)
-  - post-refactor verification/doc pass after the file-split phase
+  - split implementation into focused files:
+    - `cli/apply_command.go`
+    - `cli/apply_resolve.go`
+    - `cli/apply_conflicts.go`
+    - `cli/apply_transfer.go`
+    - `cli/apply_files.go`
+  - post-refactor verification pass completed:
+    - full `go test ./...`
+    - help text verification for `apply`/`overwrite`
+    - README/man reconciliation with final behavior
 
 ## Dry-Run Output Redesign (Draft)
 
@@ -184,7 +191,7 @@ Output requirements:
 - Prior codex mode research: [^mode-research]
 - Related mode plan: [^mode-plan]
 
-[^apply-code]: `cli/apply.go`
+[^apply-code]: `cli/apply_command.go`, `cli/apply_resolve.go`, `cli/apply_conflicts.go`, `cli/apply_transfer.go`, `cli/apply_files.go`
 [^mode-research]: `docs/research-2026-02-04-mode-classic-vs-codex.md`
 [^mode-plan]: `docs/plans/plan-2026-02-04-mode-classic-and-codex.md`
 
