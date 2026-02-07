@@ -10,7 +10,7 @@ import (
 
 func runGit(ctx context.Context, cmd *cobra.Command, dryRun bool, runner git.Runner, args ...string) error {
 	if dryRun {
-		if _, err := fmt.Fprintln(cmd.OutOrStdout(), formatGitCommand(args)); err != nil {
+		if _, err := fmt.Fprintln(cmd.OutOrStdout(), formatGitCommandForDryRun(args, shouldMaskSensitivePaths(ctx))); err != nil {
 			return err
 		}
 		return nil

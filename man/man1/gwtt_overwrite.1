@@ -31,8 +31,16 @@ Overwrite destination with source changes in codex mode
 
 
 .SH OPTIONS INHERITED FROM PARENT COMMANDS
+\fB--mask-sensitive-paths\fP[=true]
+	mask home-directory paths in --dry-run output
+
+.PP
 \fB-m\fP, \fB--mode\fP="classic"
 	execution mode: classic or codex
+
+.PP
+\fB--no-mask-sensitive-paths\fP[=false]
+	disable home-directory path masking in --dry-run output
 
 .PP
 \fB--nocolor\fP[=false]

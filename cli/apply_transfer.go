@@ -13,17 +13,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func printDryRunPlan(out io.Writer, mode handoffMode, plan transferPlan, preflight transferPreflight) error {
+func printDryRunPlan(out io.Writer, mode handoffMode, plan transferPlan, preflight transferPreflight, maskPaths bool) error {
 	if _, err := fmt.Fprintf(out, "%s plan\n", mode); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(out, "  to: %s\n", plan.to); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(out, "  source: %s\n", plan.sourceRoot); err != nil {
+	if _, err := fmt.Fprintf(out, "  source: %s\n", maskPathForDryRun(plan.sourceRoot, maskPaths)); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(out, "  destination: %s\n", plan.destinationRoot); err != nil {
+	if _, err := fmt.Fprintf(out, "  destination: %s\n", maskPathForDryRun(plan.destinationRoot, maskPaths)); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintf(out, "  overwrite: %t\n", mode == handoffOverwrite); err != nil {
@@ -59,7 +59,7 @@ func printDryRunPlan(out io.Writer, mode handoffMode, plan transferPlan, preflig
 	if _, err := fmt.Fprintln(out, "actions"); err != nil {
 		return err
 	}
-	actions := dryRunActions(mode, plan, preflight)
+	actions := dryRunActions(mode, plan, preflight, maskPaths)
 	for idx, action := range actions {
 		if _, err := fmt.Fprintf(out, "  %d. %s\n", idx+1, action); err != nil {
 			return err
@@ -68,23 +68,27 @@ func printDryRunPlan(out io.Writer, mode handoffMode, plan transferPlan, preflig
 	return nil
 }
 
-func dryRunActions(mode handoffMode, plan transferPlan, preflight transferPreflight) []string {
+func dryRunActions(mode handoffMode, plan transferPlan, preflight transferPreflight, maskPaths bool) []string {
 	actions := make([]string, 0, len(preflight.untrackedFiles)+4)
 
 	if mode == handoffOverwrite {
-		actions = append(actions, "[destructive] "+formatGitCommand([]string{"-C", plan.destinationRoot, "reset", "--hard"}))
-		actions = append(actions, "[destructive] "+formatGitCommand([]string{"-C", plan.destinationRoot, "clean", "-fd"}))
+		actions = append(actions, "[destructive] "+formatGitCommandForDryRun([]string{"-C", plan.destinationRoot, "reset", "--hard"}, maskPaths))
+		actions = append(actions, "[destructive] "+formatGitCommandForDryRun([]string{"-C", plan.destinationRoot, "clean", "-fd"}, maskPaths))
 	}
 
 	if preflight.trackedPatch {
 		if mode == handoffApply {
-			actions = append(actions, formatGitCommand([]string{"-C", plan.destinationRoot, "apply", "--check", "<temp-patch>"}))
+			actions = append(actions, formatGitCommandForDryRun([]string{"-C", plan.destinationRoot, "apply", "--check", "<temp-patch>"}, maskPaths))
 		}
-		actions = append(actions, formatGitCommand([]string{"-C", plan.destinationRoot, "apply", "<temp-patch>"}))
+		actions = append(actions, formatGitCommandForDryRun([]string{"-C", plan.destinationRoot, "apply", "<temp-patch>"}, maskPaths))
 	}
 
 	for _, rel := range preflight.untrackedFiles {
-		actions = append(actions, fmt.Sprintf("copy %s -> %s", filepath.Join(plan.sourceRoot, rel), filepath.Join(plan.destinationRoot, rel)))
+		actions = append(actions, fmt.Sprintf(
+			"copy %s -> %s",
+			maskPathForDryRun(filepath.Join(plan.sourceRoot, rel), maskPaths),
+			maskPathForDryRun(filepath.Join(plan.destinationRoot, rel), maskPaths),
+		))
 	}
 
 	if len(actions) == 0 {
@@ -95,6 +99,7 @@ func dryRunActions(mode handoffMode, plan transferPlan, preflight transferPrefli
 }
 
 func transferChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner, sourceRoot, destinationRoot string, dryRun, resetDestination bool) error {
+	maskPaths := shouldMaskSensitivePaths(ctx)
 	if resetDestination {
 		if err := runGit(ctx, cmd, dryRun, runner, "-C", destinationRoot, "reset", "--hard"); err != nil {
 			return err
@@ -115,7 +120,7 @@ func transferChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner,
 	}
 	defer func() {
 		if err := removeTempPatch(patchFile); err != nil {
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: failed to remove temp patch %s: %v\n", patchFile, err)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: failed to remove temp patch %s: %v\n", maskPathForDryRun(patchFile, maskPaths), err)
 		}
 	}()
 
@@ -142,7 +147,7 @@ func transferChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner,
 		return err
 	}
 	for _, rel := range untracked {
-		if err := copyFile(sourceRoot, destinationRoot, rel, dryRun, cmd.OutOrStdout()); err != nil {
+		if err := copyFile(sourceRoot, destinationRoot, rel, dryRun, cmd.OutOrStdout(), maskPaths); err != nil {
 			return err
 		}
 	}
@@ -170,11 +175,11 @@ func syncTrackedChangesFallback(ctx context.Context, runner git.Runner, sourceRo
 			if err := removeTrackedPath(destinationRoot, change.oldRel); err != nil {
 				return err
 			}
-			if err := copyFile(sourceRoot, destinationRoot, change.newRel, false, io.Discard); err != nil {
+			if err := copyFile(sourceRoot, destinationRoot, change.newRel, false, io.Discard, false); err != nil {
 				return err
 			}
 		case 'A', 'M', 'T', 'C':
-			if err := copyFile(sourceRoot, destinationRoot, change.newRel, false, io.Discard); err != nil {
+			if err := copyFile(sourceRoot, destinationRoot, change.newRel, false, io.Discard, false); err != nil {
 				return err
 			}
 		default:

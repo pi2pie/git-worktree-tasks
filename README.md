@@ -164,7 +164,7 @@ ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 
 Settings resolve in this order (highest precedence first):
 
-1. `--theme` / `--mode` (`-m`) flags
+1. CLI flags (for example `--theme`, `--mode` / `-m`, `--mask-sensitive-paths`, `--no-mask-sensitive-paths`)
 2. Environment variables
 3. Project config (`gwtt.config.toml` or `gwtt.toml` in repo root)
 4. User config (`$HOME/.config/gwtt/config.toml`)
@@ -179,6 +179,9 @@ export GWTT_COLOR=0
 
 # Mode selection
 export GWTT_MODE=codex
+
+# Dry-run path masking (1/true/on/yes to enable, 0/false/off/no to disable)
+export GWTT_DRY_RUN_MASK_SENSITIVE_PATHS=1
 
 # List available themes
 gwtt --themes
@@ -208,6 +211,9 @@ color_enabled = true
 [table]
 grid = false
 
+[dry_run]
+mask_sensitive_paths = true # mask $HOME/%USERPROFILE% prefixes in --dry-run output
+
 [list]
 output = "table"
 field = "path"
@@ -236,6 +242,11 @@ remove_branch = true
 worktree_only = false
 force_branch = false
 ```
+
+`[dry_run].mask_sensitive_paths` defaults to `true`. Set it to `false` if you need raw absolute paths in `--dry-run` output.  
+When enabled, home-prefixed paths are rendered as `$HOME/...` on POSIX and `%USERPROFILE%\\...` on Windows.
+You can override this per-invocation with `--mask-sensitive-paths=true|false`, `--no-mask-sensitive-paths`, or via `GWTT_DRY_RUN_MASK_SENSITIVE_PATHS`.
+For bool flags, prefer `--mask-sensitive-paths=false` (with `=`) rather than `--mask-sensitive-paths false`.
 
 ### Config File Location
 

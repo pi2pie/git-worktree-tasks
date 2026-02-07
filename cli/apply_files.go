@@ -26,7 +26,7 @@ func writeTempPatch(contents string) (string, error) {
 	return tmp.Name(), nil
 }
 
-func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer) (err error) {
+func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer, maskPaths bool) (err error) {
 	srcPath := filepath.Join(srcRoot, rel)
 	dstPath := filepath.Join(dstRoot, rel)
 
@@ -41,7 +41,7 @@ func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer) (err err
 			return err
 		}
 		if dryRun {
-			_, err := fmt.Fprintf(out, "symlink %s -> %s (%s)\n", srcPath, dstPath, target)
+			_, err := fmt.Fprintf(out, "symlink %s -> %s (%s)\n", maskPathForDryRun(srcPath, maskPaths), maskPathForDryRun(dstPath, maskPaths), target)
 			return err
 		}
 		if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
@@ -58,7 +58,7 @@ func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer) (err err
 	}
 
 	if dryRun {
-		_, err := fmt.Fprintf(out, "copy %s -> %s\n", srcPath, dstPath)
+		_, err := fmt.Fprintf(out, "copy %s -> %s\n", maskPathForDryRun(srcPath, maskPaths), maskPathForDryRun(dstPath, maskPaths))
 		return err
 	}
 

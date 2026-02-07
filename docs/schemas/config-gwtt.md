@@ -1,7 +1,7 @@
 ---
 title: "gwtt configuration schema"
 created-date: 2026-01-27
-modified-date: 2026-02-04
+modified-date: 2026-02-07
 status: in-progress
 agent: codex
 ---
@@ -23,6 +23,7 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 - `GWTT_THEME` overrides `[theme].name`.
 - `GWTT_COLOR` overrides `[ui].color_enabled`.
 - `GWTT_MODE` overrides `mode`.
+- `GWTT_DRY_RUN_MASK_SENSITIVE_PATHS` overrides `[dry_run].mask_sensitive_paths`.
 - `CODEX_HOME` is consumed in `mode="codex"` to locate `$CODEX_HOME/worktrees` (this is a Codex App/Codex CLI convention, not a `gwtt` config key).
   - Fallback: if `CODEX_HOME` is unset, `gwtt` should assume `~/.codex` (home dir + `/.codex`) to align with Codex defaults.
   - Note: confirm the default path against current Codex App/Codex CLI docs when implementing (and prefer matching their behavior over introducing a new `gwtt`-specific default).
@@ -44,6 +45,17 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 ### `[table]`
 
 - `grid` (bool, default: `false`)
+
+### `[dry_run]`
+
+- `mask_sensitive_paths` (bool, default: `true`)
+  - When `true`, home-prefixed paths in `--dry-run` output are masked:
+    - POSIX: `$HOME/...`
+    - Windows: `%USERPROFILE%\\...`
+  - When `false`, `--dry-run` output keeps raw absolute paths.
+  - CLI overrides:
+    - `--mask-sensitive-paths[=true|false]`
+    - `--no-mask-sensitive-paths`
 
 ### `[create]`
 
@@ -119,6 +131,9 @@ color_enabled = true
 
 [table]
 grid = false
+
+[dry_run]
+mask_sensitive_paths = true
 
 [create]
 output = "text"

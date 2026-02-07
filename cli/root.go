@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.1.2-alpha.2"
+var Version = "0.1.2-alpha.3"
 
 var (
 	errCanceled     = errors.New("git worktree task process canceled")
@@ -47,12 +47,14 @@ func RootCommand() *cobra.Command {
 }
 
 type runState struct {
-	hasWarnings   bool
-	exitOnWarning bool
-	noColor       bool
-	theme         string
-	mode          string
-	listThemes    bool
+	hasWarnings          bool
+	exitOnWarning        bool
+	noColor              bool
+	maskSensitivePaths   bool
+	noMaskSensitivePaths bool
+	theme                string
+	mode                 string
+	listThemes           bool
 }
 
 func gitWorkTreeCommand() (*cobra.Command, *runState) {
@@ -80,6 +82,8 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
 	cmd.PersistentFlags().BoolVar(&state.noColor, "nocolor", false, "disable color output")
+	cmd.PersistentFlags().BoolVar(&state.maskSensitivePaths, "mask-sensitive-paths", true, "mask home-directory paths in --dry-run output")
+	cmd.PersistentFlags().BoolVar(&state.noMaskSensitivePaths, "no-mask-sensitive-paths", false, "disable home-directory path masking in --dry-run output")
 	cmd.PersistentFlags().StringVar(&state.theme, "theme", ui.DefaultThemeName(), "color theme: "+strings.Join(ui.ThemeNames(), ", "))
 	cmd.PersistentFlags().StringVarP(&state.mode, "mode", "m", "classic", "execution mode: classic or codex")
 	cmd.PersistentFlags().BoolVar(&state.listThemes, "themes", false, "print available themes and exit")
@@ -103,6 +107,15 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 			return err
 		}
 		cfg.Mode = mode
+		if cmd.Flags().Changed("mask-sensitive-paths") && cmd.Flags().Changed("no-mask-sensitive-paths") {
+			return fmt.Errorf("cannot use both --mask-sensitive-paths and --no-mask-sensitive-paths")
+		}
+		if cmd.Flags().Changed("mask-sensitive-paths") {
+			cfg.DryRun.MaskSensitivePaths = state.maskSensitivePaths
+		}
+		if cmd.Flags().Changed("no-mask-sensitive-paths") {
+			cfg.DryRun.MaskSensitivePaths = !state.noMaskSensitivePaths
+		}
 		cmd.SetContext(withConfig(cmd.Context(), &cfg))
 		themeName := state.theme
 		if !cmd.Flags().Changed("theme") {

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -153,7 +154,7 @@ func TestDryRunActions(t *testing.T) {
 		untrackedFiles: []string{"a.txt"},
 	}
 
-	actions := dryRunActions(handoffOverwrite, plan, preflight)
+	actions := dryRunActions(handoffOverwrite, plan, preflight, false)
 	if len(actions) != 4 {
 		t.Fatalf("expected 4 actions, got %d (%v)", len(actions), actions)
 	}
@@ -183,7 +184,7 @@ func TestDryRunActionsApplyIncludesPatchCheck(t *testing.T) {
 		trackedPatch: true,
 	}
 
-	actions := dryRunActions(handoffApply, plan, preflight)
+	actions := dryRunActions(handoffApply, plan, preflight, false)
 	if len(actions) != 2 {
 		t.Fatalf("expected 2 actions, got %d (%v)", len(actions), actions)
 	}
@@ -192,6 +193,58 @@ func TestDryRunActionsApplyIncludesPatchCheck(t *testing.T) {
 	}
 	if !strings.Contains(actions[1], "apply <temp-patch>") {
 		t.Fatalf("expected apply action, got %q", actions[1])
+	}
+}
+
+func TestPrintDryRunPlanMasksPaths(t *testing.T) {
+	t.Setenv("HOME", "/Users/alice")
+	plan := transferPlan{
+		to:              transferToLocal,
+		sourceRoot:      "/Users/alice/codex/repo",
+		destinationRoot: "/Users/alice/repo",
+	}
+	preflight := transferPreflight{
+		trackedPatch:   true,
+		untrackedFiles: []string{"a.txt"},
+	}
+
+	var out bytes.Buffer
+	if err := printDryRunPlan(&out, handoffApply, plan, preflight, true); err != nil {
+		t.Fatalf("printDryRunPlan() error = %v", err)
+	}
+	text := out.String()
+	if !strings.Contains(text, "source: $HOME/codex/repo") {
+		t.Fatalf("expected masked source path, got:\n%s", text)
+	}
+	if !strings.Contains(text, "destination: $HOME/repo") {
+		t.Fatalf("expected masked destination path, got:\n%s", text)
+	}
+	if strings.Contains(text, "/Users/alice/codex/repo") || strings.Contains(text, "/Users/alice/repo") {
+		t.Fatalf("did not expect raw home paths when masking is enabled, got:\n%s", text)
+	}
+}
+
+func TestPrintDryRunPlanMaskDisabled(t *testing.T) {
+	t.Setenv("HOME", "/Users/alice")
+	plan := transferPlan{
+		to:              transferToLocal,
+		sourceRoot:      "/Users/alice/codex/repo",
+		destinationRoot: "/Users/alice/repo",
+	}
+	preflight := transferPreflight{
+		trackedPatch: true,
+	}
+
+	var out bytes.Buffer
+	if err := printDryRunPlan(&out, handoffApply, plan, preflight, false); err != nil {
+		t.Fatalf("printDryRunPlan() error = %v", err)
+	}
+	text := out.String()
+	if !strings.Contains(text, "source: /Users/alice/codex/repo") {
+		t.Fatalf("expected raw source path, got:\n%s", text)
+	}
+	if !strings.Contains(text, "destination: /Users/alice/repo") {
+		t.Fatalf("expected raw destination path, got:\n%s", text)
 	}
 }
 

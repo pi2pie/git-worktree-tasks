@@ -18,8 +18,16 @@ Create, manage, and clean up git worktrees based on task names.
 	help for git-worktree-tasks
 
 .PP
+\fB--mask-sensitive-paths\fP[=true]
+	mask home-directory paths in --dry-run output
+
+.PP
 \fB-m\fP, \fB--mode\fP="classic"
 	execution mode: classic or codex
+
+.PP
+\fB--no-mask-sensitive-paths\fP[=false]
+	disable home-directory path masking in --dry-run output
 
 .PP
 \fB--nocolor\fP[=false]

@@ -2,7 +2,7 @@
 title: "Dry-run path masking for sensitive local paths"
 created-date: 2026-02-07
 modified-date: 2026-02-07
-status: draft
+status: completed
 agent: codex
 ---
 

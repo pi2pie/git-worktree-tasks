@@ -82,7 +82,7 @@ func newCreateCommand() *cobra.Command {
 			}
 			gitArgs := buildCreateWorktreeArgs(repoRoot, path, branch, base, branchExists)
 			if opts.dryRun {
-				if _, err := fmt.Fprintln(cmd.OutOrStdout(), formatGitCommand(gitArgs)); err != nil {
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), formatGitCommandForDryRun(gitArgs, shouldMaskSensitivePaths(ctx))); err != nil {
 					return err
 				}
 				return nil

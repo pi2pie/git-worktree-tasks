@@ -6,6 +6,13 @@ import (
 	"testing"
 )
 
+func TestDefaultConfigDryRunMaskSensitivePaths(t *testing.T) {
+	cfg := DefaultConfig()
+	if !cfg.DryRun.MaskSensitivePaths {
+		t.Fatalf("DryRun.MaskSensitivePaths = false, want true")
+	}
+}
+
 func TestLoadConfigPrecedence(t *testing.T) {
 	home := t.TempDir()
 	project := t.TempDir()
@@ -159,5 +166,53 @@ grid = false
 	}
 	if cfg.Status.Grid {
 		t.Fatalf("Status.Grid = true, want false (should cascade from table.grid)")
+	}
+}
+
+func TestLoadConfigDryRunMaskSensitivePathsFalse(t *testing.T) {
+	project := t.TempDir()
+	writeFile(t, filepath.Join(project, projectConfigPrimary), `
+[dry_run]
+mask_sensitive_paths = false
+`)
+
+	restore := chdir(t, project)
+	defer restore()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.DryRun.MaskSensitivePaths {
+		t.Fatalf("DryRun.MaskSensitivePaths = true, want false")
+	}
+}
+
+func TestLoadEnvDryRunMaskSensitivePathsOverride(t *testing.T) {
+	project := t.TempDir()
+	writeFile(t, filepath.Join(project, projectConfigPrimary), `
+[dry_run]
+mask_sensitive_paths = false
+`)
+
+	restore := chdir(t, project)
+	defer restore()
+	t.Setenv(envDryRunMaskSensitivePath, "true")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if !cfg.DryRun.MaskSensitivePaths {
+		t.Fatalf("DryRun.MaskSensitivePaths = false, want true")
+	}
+}
+
+func TestLoadEnvDryRunMaskSensitivePathsInvalid(t *testing.T) {
+	t.Setenv(envDryRunMaskSensitivePath, "maybe")
+
+	_, err := Load()
+	if err == nil {
+		t.Fatalf("Load() expected error")
 	}
 }

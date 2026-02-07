@@ -137,7 +137,7 @@ func runCodexHandoff(cmd *cobra.Command, opaqueID string, opts handoffOptions, m
 	}
 
 	if opts.dryRun {
-		if err := printDryRunPlan(cmd.OutOrStdout(), mode, plan, preflight); err != nil {
+		if err := printDryRunPlan(cmd.OutOrStdout(), mode, plan, preflight, shouldMaskSensitivePaths(ctx)); err != nil {
 			return err
 		}
 	}
