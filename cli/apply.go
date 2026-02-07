@@ -14,9 +14,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	transferToLocal    = "local"
+	transferToWorktree = "worktree"
+)
+
+type handoffMode string
+
+const (
+	handoffApply     handoffMode = "apply"
+	handoffOverwrite handoffMode = "overwrite"
+)
+
 type applyOptions struct {
 	yes    bool
 	dryRun bool
+	to     string
+	force  bool
+}
+
+type handoffOptions struct {
+	yes    bool
+	dryRun bool
+	to     string
+}
+
+type transferPlan struct {
+	to              string
+	sourceRoot      string
+	sourceName      string
+	destinationRoot string
+	destinationName string
 }
 
 type applyConflictError struct {
@@ -37,137 +65,212 @@ func newApplyCommand() *cobra.Command {
 	opts := &applyOptions{}
 	cmd := &cobra.Command{
 		Use:   "apply <task>",
-		Short: "Apply changes between a Codex worktree and the local checkout",
+		Short: "Apply non-destructive changes between a Codex worktree and local checkout",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			modeCtx, err := resolveModeContext(cmd, false)
-			if err != nil {
-				return err
+			mode := handoffApply
+			if opts.force {
+				mode = handoffOverwrite
 			}
-			cfg, ok := configFromContext(ctx)
-			if !ok || modeCtx.mode != modeCodex {
-				return fmt.Errorf("apply is only supported in --mode=codex")
-			}
-
-			runner := defaultRunner()
-			repoRoot, err := repoRoot(ctx, runner)
-			if err != nil {
-				return err
-			}
-			if _, err := git.CurrentBranch(ctx, runner); err != nil {
-				return err
-			}
-
-			if !cmd.Flags().Changed("yes") {
-				opts.yes = !cfg.Cleanup.Confirm
-			}
-
-			opaqueID := strings.TrimSpace(args[0])
-			if opaqueID == "" {
-				return fmt.Errorf("task query cannot be empty")
-			}
-
-			wtPath, ok, err := resolveCodexWorktreePath(ctx, runner, repoRoot, modeCtx.codexWorktrees, opaqueID)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				return fmt.Errorf("no Codex worktree found for %q under %s", opaqueID, filepath.Join("$CODEX_HOME", "worktrees"))
-			}
-
-			conflictReasons, err := detectApplyConflicts(ctx, runner, repoRoot, wtPath)
-			if err != nil {
-				return err
-			}
-			if len(conflictReasons) > 0 {
-				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n", ui.WarningStyle.Render("apply conflict detected:")); err != nil {
-					return err
-				}
-				for _, reason := range conflictReasons {
-					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "- %s\n", ui.WarningStyle.Render(reason)); err != nil {
-						return err
-					}
-				}
-
-				if !opts.yes {
-					ok, err := confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), "Overwrite the Codex worktree from the local checkout?")
-					if err != nil {
-						return err
-					}
-					if !ok {
-						return errCanceled
-					}
-					ok, err = confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), "This will discard worktree changes. Continue?")
-					if err != nil {
-						return err
-					}
-					if !ok {
-						return errCanceled
-					}
-				}
-
-				return overwriteWorktreeChanges(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun)
-			}
-
-			if err := applyWorktreeChanges(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun); err != nil {
-				var conflictErr *applyConflictError
-				if errors.As(err, &conflictErr) {
-					if !opts.yes {
-						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n", ui.WarningStyle.Render(conflictErr.reason)); err != nil {
-							return err
-						}
-						ok, err := confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), "Overwrite the Codex worktree from the local checkout?")
-						if err != nil {
-							return err
-						}
-						if !ok {
-							return errCanceled
-						}
-						ok, err = confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), "This will discard worktree changes. Continue?")
-						if err != nil {
-							return err
-						}
-						if !ok {
-							return errCanceled
-						}
-					}
-					return overwriteWorktreeChanges(ctx, cmd, runner, repoRoot, wtPath, opts.dryRun)
-				}
-				return err
-			}
-			if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("apply complete")); err != nil {
-				return err
-			}
-			return nil
+			return runCodexHandoff(cmd, strings.TrimSpace(args[0]), handoffOptions{
+				yes:    opts.yes,
+				dryRun: opts.dryRun,
+				to:     opts.to,
+			}, mode)
 		},
 	}
 
 	cmd.Flags().BoolVar(&opts.yes, "yes", false, "skip confirmation prompts")
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
+	cmd.Flags().StringVar(&opts.to, "to", transferToLocal, "transfer destination: local or worktree")
+	cmd.Flags().BoolVar(&opts.force, "force", false, "compatibility alias for overwrite behavior")
 	return cmd
 }
 
-func detectApplyConflicts(ctx context.Context, runner git.Runner, repoRoot, worktreePath string) ([]string, error) {
+func newOverwriteCommand() *cobra.Command {
+	opts := &handoffOptions{}
+	cmd := &cobra.Command{
+		Use:   "overwrite <task>",
+		Short: "Overwrite destination with source changes in codex mode",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runCodexHandoff(cmd, strings.TrimSpace(args[0]), *opts, handoffOverwrite)
+		},
+	}
+
+	cmd.Flags().BoolVar(&opts.yes, "yes", false, "skip confirmation prompts")
+	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
+	cmd.Flags().StringVar(&opts.to, "to", transferToLocal, "transfer destination: local or worktree")
+	return cmd
+}
+
+func runCodexHandoff(cmd *cobra.Command, opaqueID string, opts handoffOptions, mode handoffMode) error {
+	ctx := cmd.Context()
+	modeCtx, err := resolveModeContext(cmd, false)
+	if err != nil {
+		return err
+	}
+	cfg, ok := configFromContext(ctx)
+	if !ok || modeCtx.mode != modeCodex {
+		return fmt.Errorf("%s is only supported in --mode=codex", mode)
+	}
+
+	if !cmd.Flags().Changed("yes") {
+		opts.yes = !cfg.Cleanup.Confirm
+	}
+
+	if opaqueID == "" {
+		return fmt.Errorf("task query cannot be empty")
+	}
+
+	runner := defaultRunner()
+	repoRoot, err := repoRoot(ctx, runner)
+	if err != nil {
+		return err
+	}
+	if _, err := git.CurrentBranch(ctx, runner); err != nil {
+		return err
+	}
+
+	wtPath, found, err := resolveCodexWorktreePath(ctx, runner, repoRoot, modeCtx.codexWorktrees, opaqueID)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("no Codex worktree found for %q under %s", opaqueID, filepath.Join("$CODEX_HOME", "worktrees"))
+	}
+
+	plan, err := resolveTransferPlan(repoRoot, wtPath, opts.to)
+	if err != nil {
+		return err
+	}
+
+	if mode == handoffApply {
+		reasons, err := detectApplyConflicts(ctx, runner, plan.destinationRoot, plan.destinationName, plan.sourceRoot)
+		if err != nil {
+			return err
+		}
+		if len(reasons) > 0 {
+			if err := printConflictReasons(cmd.OutOrStdout(), reasons); err != nil {
+				return err
+			}
+			if err := printOverwriteHint(cmd.OutOrStdout(), plan.to, opaqueID); err != nil {
+				return err
+			}
+			return fmt.Errorf("apply aborted due to conflicts")
+		}
+	}
+
+	if mode == handoffOverwrite {
+		if err := confirmOverwrite(cmd, opts.yes, plan); err != nil {
+			return err
+		}
+	}
+
+	err = transferChanges(ctx, cmd, runner, plan.sourceRoot, plan.destinationRoot, opts.dryRun, mode == handoffOverwrite)
+	if err != nil {
+		if mode == handoffApply {
+			var conflictErr *applyConflictError
+			if errors.As(err, &conflictErr) {
+				if err := printConflictReasons(cmd.OutOrStdout(), []string{conflictErr.reason}); err != nil {
+					return err
+				}
+				if err := printOverwriteHint(cmd.OutOrStdout(), plan.to, opaqueID); err != nil {
+					return err
+				}
+				return fmt.Errorf("apply aborted due to conflicts")
+			}
+		}
+		return err
+	}
+
+	if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render(fmt.Sprintf("%s complete", mode))); err != nil {
+		return err
+	}
+	return nil
+}
+
+func resolveTransferPlan(repoRoot, worktreePath, to string) (transferPlan, error) {
+	switch strings.TrimSpace(to) {
+	case transferToLocal:
+		return transferPlan{
+			to:              transferToLocal,
+			sourceRoot:      worktreePath,
+			sourceName:      "Codex worktree",
+			destinationRoot: repoRoot,
+			destinationName: "local checkout",
+		}, nil
+	case transferToWorktree:
+		return transferPlan{
+			to:              transferToWorktree,
+			sourceRoot:      repoRoot,
+			sourceName:      "local checkout",
+			destinationRoot: worktreePath,
+			destinationName: "Codex worktree",
+		}, nil
+	default:
+		return transferPlan{}, fmt.Errorf("invalid --to value %q (expected local or worktree)", to)
+	}
+}
+
+func printConflictReasons(out io.Writer, reasons []string) error {
+	if _, err := fmt.Fprintf(out, "%s\n", ui.WarningStyle.Render("apply conflict detected:")); err != nil {
+		return err
+	}
+	for _, reason := range reasons {
+		if _, err := fmt.Fprintf(out, "- %s\n", ui.WarningStyle.Render(reason)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func printOverwriteHint(out io.Writer, to, opaqueID string) error {
+	_, err := fmt.Fprintf(out, "%s\n", ui.WarningStyle.Render(fmt.Sprintf("rerun with overwrite: gwtt overwrite --to %s %s", to, opaqueID)))
+	return err
+}
+
+func confirmOverwrite(cmd *cobra.Command, yes bool, plan transferPlan) error {
+	if yes {
+		return nil
+	}
+	ok, err := confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), fmt.Sprintf("Overwrite the %s from the %s?", plan.destinationName, plan.sourceName))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errCanceled
+	}
+	ok, err = confirmPrompt(cmd.InOrStdin(), cmd.OutOrStdout(), fmt.Sprintf("This will discard %s changes. Continue?", plan.destinationName))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errCanceled
+	}
+	return nil
+}
+
+func detectApplyConflicts(ctx context.Context, runner git.Runner, destinationRoot, destinationName, sourceRoot string) ([]string, error) {
 	var reasons []string
 
-	dirty, err := isDirty(ctx, runner, repoRoot)
+	dirty, err := isDirty(ctx, runner, destinationRoot)
 	if err != nil {
 		return nil, err
 	}
 	if dirty {
-		reasons = append(reasons, "local checkout has uncommitted changes")
+		reasons = append(reasons, fmt.Sprintf("%s has uncommitted changes", destinationName))
 	}
 
-	localModified, err := modifiedFiles(ctx, runner, repoRoot)
+	sourceModified, err := modifiedFiles(ctx, runner, sourceRoot)
 	if err != nil {
 		return nil, err
 	}
-	worktreeModified, err := modifiedFiles(ctx, runner, worktreePath)
+	destinationModified, err := modifiedFiles(ctx, runner, destinationRoot)
 	if err != nil {
 		return nil, err
 	}
-	if intersects(localModified, worktreeModified) {
+	if intersects(sourceModified, destinationModified) {
 		reasons = append(reasons, "both sides modified the same file(s)")
 	}
 
@@ -236,8 +339,17 @@ func intersects(left, right map[string]struct{}) bool {
 	return false
 }
 
-func applyWorktreeChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner, repoRoot, worktreePath string, dryRun bool) error {
-	patch, err := gitDiff(ctx, runner, worktreePath)
+func transferChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner, sourceRoot, destinationRoot string, dryRun, resetDestination bool) error {
+	if resetDestination {
+		if err := runGit(ctx, cmd, dryRun, runner, "-C", destinationRoot, "reset", "--hard"); err != nil {
+			return err
+		}
+		if err := runGit(ctx, cmd, dryRun, runner, "-C", destinationRoot, "clean", "-fd"); err != nil {
+			return err
+		}
+	}
+
+	patch, err := gitDiff(ctx, runner, sourceRoot)
 	if err != nil {
 		return err
 	}
@@ -253,70 +365,22 @@ func applyWorktreeChanges(ctx context.Context, cmd *cobra.Command, runner git.Ru
 	}()
 
 	if patch != "" {
-		if err := runGit(ctx, cmd, dryRun, runner, "-C", repoRoot, "apply", "--check", patchFile); err != nil {
+		if err := runGit(ctx, cmd, dryRun, runner, "-C", destinationRoot, "apply", "--check", patchFile); err != nil {
 			return &applyConflictError{reason: "apply patch check failed", err: err}
 		}
-		if err := runGit(ctx, cmd, dryRun, runner, "-C", repoRoot, "apply", patchFile); err != nil {
+		if err := runGit(ctx, cmd, dryRun, runner, "-C", destinationRoot, "apply", patchFile); err != nil {
 			return fmt.Errorf("apply patch: %w", err)
 		}
 	}
 
-	untracked, err := listUntracked(ctx, runner, worktreePath)
+	untracked, err := listUntracked(ctx, runner, sourceRoot)
 	if err != nil {
 		return err
 	}
 	for _, rel := range untracked {
-		if err := copyFile(worktreePath, repoRoot, rel, dryRun, cmd.OutOrStdout()); err != nil {
+		if err := copyFile(sourceRoot, destinationRoot, rel, dryRun, cmd.OutOrStdout()); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func overwriteWorktreeChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner, repoRoot, worktreePath string, dryRun bool) error {
-	if err := runGit(ctx, cmd, dryRun, runner, "-C", worktreePath, "reset", "--hard"); err != nil {
-		return err
-	}
-	if err := runGit(ctx, cmd, dryRun, runner, "-C", worktreePath, "clean", "-fd"); err != nil {
-		return err
-	}
-
-	patch, err := gitDiff(ctx, runner, repoRoot)
-	if err != nil {
-		return err
-	}
-	patchFile, err := writeTempPatch(patch)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := removeTempPatch(patchFile); err != nil {
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: failed to remove temp patch %s: %v\n", patchFile, err)
-		}
-	}()
-
-	if patch != "" {
-		if err := runGit(ctx, cmd, dryRun, runner, "-C", worktreePath, "apply", "--check", patchFile); err != nil {
-			return &applyConflictError{reason: "apply patch check failed", err: err}
-		}
-		if err := runGit(ctx, cmd, dryRun, runner, "-C", worktreePath, "apply", patchFile); err != nil {
-			return err
-		}
-	}
-
-	untracked, err := listUntracked(ctx, runner, repoRoot)
-	if err != nil {
-		return err
-	}
-	for _, rel := range untracked {
-		if err := copyFile(repoRoot, worktreePath, rel, dryRun, cmd.OutOrStdout()); err != nil {
-			return err
-		}
-	}
-
-	if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.SuccessStyle.Render("overwrite complete")); err != nil {
-		return err
 	}
 	return nil
 }

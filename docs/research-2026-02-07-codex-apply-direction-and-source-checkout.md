@@ -117,11 +117,23 @@ Apply vs overwrite matrix:
   - reset and clean destination before transfer;
   - then apply tracked diff + copy untracked files from source.
 
-## Open Questions
+## Phase 1 Decisions (Locked)
 
-- Should we ship `apply --force` alias in v1, or keep only explicit `overwrite` to keep UX strict?
-- Do we need `--output json` for dry-run planning (machine-readable action plan), or is text-first enough initially?
-- Do we need a future `relink` command for app-like branch wiring, or is explicit error + manual Git workflow sufficient?
+- Ship `overwrite` as a peer command and keep `apply --force` as compatibility alias.
+- `apply` remains non-destructive and direction-stable; conflicts now fail with overwrite guidance.
+- Keep dry-run redesign text-first for now; JSON planning output is deferred.
+- Keep relink/wiring out of scope in this phase.
+
+## Implementation Status (Current)
+
+- Implemented:
+  - `apply --to local|worktree`
+  - `overwrite --to local|worktree`
+  - `apply --force` compatibility alias
+  - no implicit direction switching on `apply` conflicts
+- Pending:
+  - dry-run plan-style output redesign
+  - split `cli/apply.go` into focused files (`apply_command`, `apply_resolve`, `apply_conflicts`, `apply_transfer`, `apply_files`)
 
 ## Dry-Run Output Redesign (Draft)
 

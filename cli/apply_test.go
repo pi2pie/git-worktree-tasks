@@ -17,7 +17,7 @@ func TestDetectApplyConflicts(t *testing.T) {
 		},
 	}
 
-	reasons, err := detectApplyConflicts(context.Background(), runner, "/repo", "/codex")
+	reasons, err := detectApplyConflicts(context.Background(), runner, "/repo", "local checkout", "/codex")
 	if err != nil {
 		t.Fatalf("detectApplyConflicts error: %v", err)
 	}
@@ -53,11 +53,69 @@ func TestDetectApplyConflictsNone(t *testing.T) {
 		},
 	}
 
-	reasons, err := detectApplyConflicts(context.Background(), runner, "/repo", "/codex")
+	reasons, err := detectApplyConflicts(context.Background(), runner, "/repo", "local checkout", "/codex")
 	if err != nil {
 		t.Fatalf("detectApplyConflicts error: %v", err)
 	}
 	if len(reasons) != 0 {
 		t.Fatalf("expected no conflict reasons, got %v", reasons)
+	}
+}
+
+func TestResolveTransferPlan(t *testing.T) {
+	repoRoot := "/repo"
+	worktreePath := "/codex"
+
+	tests := []struct {
+		name      string
+		to        string
+		wantSrc   string
+		wantDst   string
+		wantSrcN  string
+		wantDstN  string
+		expectErr bool
+	}{
+		{
+			name:     "to local",
+			to:       transferToLocal,
+			wantSrc:  worktreePath,
+			wantDst:  repoRoot,
+			wantSrcN: "Codex worktree",
+			wantDstN: "local checkout",
+		},
+		{
+			name:     "to worktree",
+			to:       transferToWorktree,
+			wantSrc:  repoRoot,
+			wantDst:  worktreePath,
+			wantSrcN: "local checkout",
+			wantDstN: "Codex worktree",
+		},
+		{
+			name:      "invalid destination",
+			to:        "somewhere",
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resolveTransferPlan(repoRoot, worktreePath, tt.to)
+			if tt.expectErr {
+				if err == nil {
+					t.Fatalf("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("resolveTransferPlan() error: %v", err)
+			}
+			if got.sourceRoot != tt.wantSrc || got.destinationRoot != tt.wantDst {
+				t.Fatalf("resolveTransferPlan() roots = (%q -> %q), want (%q -> %q)", got.sourceRoot, got.destinationRoot, tt.wantSrc, tt.wantDst)
+			}
+			if got.sourceName != tt.wantSrcN || got.destinationName != tt.wantDstN {
+				t.Fatalf("resolveTransferPlan() names = (%q -> %q), want (%q -> %q)", got.sourceName, got.destinationName, tt.wantSrcN, tt.wantDstN)
+			}
+		})
 	}
 }

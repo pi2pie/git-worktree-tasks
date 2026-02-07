@@ -124,6 +124,7 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 		newListCommand(),
 		newStatusCommand(),
 		newApplyCommand(),
+		newOverwriteCommand(),
 		newTUICommand(),
 	)
 
