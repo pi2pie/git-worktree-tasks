@@ -254,9 +254,12 @@ func TestIntegrationApplyConflictRequiresExplicitOverwrite(t *testing.T) {
 	writeFile(t, repoDir, "shared.txt", "local change\n")
 	writeFile(t, codexPath, "shared.txt", "codex change\n")
 
-	_, err := runCLIError(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID)
+	output, err := runCLIError(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID)
 	if err == nil || !strings.Contains(err.Error(), "apply aborted due to conflicts") {
 		t.Fatalf("expected apply conflict abort, got %v", err)
+	}
+	if !strings.Contains(output, "next step: gwtt overwrite --to local "+opaqueID) {
+		t.Fatalf("expected overwrite next-step guidance, got output:\n%s", output)
 	}
 
 	content, err := os.ReadFile(filepath.Join(repoDir, "shared.txt"))
@@ -273,6 +276,54 @@ func TestIntegrationApplyConflictRequiresExplicitOverwrite(t *testing.T) {
 	}
 	if string(content) != "codex change\n" {
 		t.Fatalf("expected codex content to remain, got %q", string(content))
+	}
+}
+
+func TestIntegrationApplyDryRunPlanOutput(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "applydry1"
+	codexPath := addCodexWorktree(t, repoDir, codexHome, opaqueID)
+
+	writeFile(t, codexPath, "dry.txt", "codex dry-run\n")
+
+	output := runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID, "--dry-run")
+	for _, want := range []string{
+		"apply plan",
+		"  to: local",
+		"preflight",
+		"actions",
+		"tracked_patch:",
+		"untracked_files:",
+		"copy ",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
+		}
+	}
+}
+
+func TestIntegrationOverwriteDryRunPlanOutput(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "applydry2"
+	codexPath := addCodexWorktree(t, repoDir, codexHome, opaqueID)
+
+	writeFile(t, repoDir, "dry-overwrite.txt", "from local\n")
+	writeFile(t, codexPath, "dry-overwrite.txt", "from codex\n")
+
+	output := runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "overwrite", opaqueID, "--to", "worktree", "--dry-run")
+	for _, want := range []string{
+		"overwrite plan",
+		"  to: worktree",
+		"  overwrite: true",
+		"[destructive] git -C ",
+		"reset --hard",
+		"clean -fd",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
+		}
 	}
 }
 

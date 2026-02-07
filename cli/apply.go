@@ -47,6 +47,13 @@ type transferPlan struct {
 	destinationName string
 }
 
+type transferPreflight struct {
+	destinationDirty bool
+	overlappingFiles int
+	trackedPatch     bool
+	untrackedFiles   []string
+}
+
 type applyConflictError struct {
 	reason string
 	err    error
@@ -145,11 +152,22 @@ func runCodexHandoff(cmd *cobra.Command, opaqueID string, opts handoffOptions, m
 		return err
 	}
 
-	if mode == handoffApply {
-		reasons, err := detectApplyConflicts(ctx, runner, plan.destinationRoot, plan.destinationName, plan.sourceRoot)
+	preflight := transferPreflight{}
+	if opts.dryRun || mode == handoffApply {
+		preflight, err = collectTransferPreflight(ctx, runner, plan.sourceRoot, plan.destinationRoot, opts.dryRun)
 		if err != nil {
 			return err
 		}
+	}
+
+	if opts.dryRun {
+		if err := printDryRunPlan(cmd.OutOrStdout(), mode, plan, preflight); err != nil {
+			return err
+		}
+	}
+
+	if mode == handoffApply {
+		reasons := conflictReasonsForApply(preflight, plan.destinationName)
 		if len(reasons) > 0 {
 			if err := printConflictReasons(cmd.OutOrStdout(), reasons); err != nil {
 				return err
@@ -161,7 +179,7 @@ func runCodexHandoff(cmd *cobra.Command, opaqueID string, opts handoffOptions, m
 		}
 	}
 
-	if mode == handoffOverwrite {
+	if mode == handoffOverwrite && !opts.dryRun {
 		if err := confirmOverwrite(cmd, opts.yes, plan); err != nil {
 			return err
 		}
@@ -214,7 +232,7 @@ func resolveTransferPlan(repoRoot, worktreePath, to string) (transferPlan, error
 }
 
 func printConflictReasons(out io.Writer, reasons []string) error {
-	if _, err := fmt.Fprintf(out, "%s\n", ui.WarningStyle.Render("apply conflict detected:")); err != nil {
+	if _, err := fmt.Fprintf(out, "%s\n", ui.WarningStyle.Render("apply blocked (non-destructive mode):")); err != nil {
 		return err
 	}
 	for _, reason := range reasons {
@@ -226,7 +244,10 @@ func printConflictReasons(out io.Writer, reasons []string) error {
 }
 
 func printOverwriteHint(out io.Writer, to, opaqueID string) error {
-	_, err := fmt.Fprintf(out, "%s\n", ui.WarningStyle.Render(fmt.Sprintf("rerun with overwrite: gwtt overwrite --to %s %s", to, opaqueID)))
+	if _, err := fmt.Fprintf(out, "%s\n", ui.WarningStyle.Render(fmt.Sprintf("next step: gwtt overwrite --to %s %s", to, opaqueID))); err != nil {
+		return err
+	}
+	_, err := fmt.Fprintf(out, "%s\n", ui.WarningStyle.Render("add --yes to skip overwrite confirmation prompts"))
 	return err
 }
 
@@ -252,29 +273,11 @@ func confirmOverwrite(cmd *cobra.Command, yes bool, plan transferPlan) error {
 }
 
 func detectApplyConflicts(ctx context.Context, runner git.Runner, destinationRoot, destinationName, sourceRoot string) ([]string, error) {
-	var reasons []string
-
-	dirty, err := isDirty(ctx, runner, destinationRoot)
+	preflight, err := collectTransferPreflight(ctx, runner, sourceRoot, destinationRoot, false)
 	if err != nil {
 		return nil, err
 	}
-	if dirty {
-		reasons = append(reasons, fmt.Sprintf("%s has uncommitted changes", destinationName))
-	}
-
-	sourceModified, err := modifiedFiles(ctx, runner, sourceRoot)
-	if err != nil {
-		return nil, err
-	}
-	destinationModified, err := modifiedFiles(ctx, runner, destinationRoot)
-	if err != nil {
-		return nil, err
-	}
-	if intersects(sourceModified, destinationModified) {
-		reasons = append(reasons, "both sides modified the same file(s)")
-	}
-
-	return reasons, nil
+	return conflictReasonsForApply(preflight, destinationName), nil
 }
 
 func isDirty(ctx context.Context, runner git.Runner, repoRoot string) (bool, error) {
@@ -324,19 +327,147 @@ func modifiedFiles(ctx context.Context, runner git.Runner, repoRoot string) (map
 	return files, nil
 }
 
-func intersects(left, right map[string]struct{}) bool {
+func intersectCount(left, right map[string]struct{}) int {
 	if len(left) == 0 || len(right) == 0 {
-		return false
+		return 0
 	}
 	if len(left) > len(right) {
 		left, right = right, left
 	}
+	count := 0
 	for key := range left {
 		if _, ok := right[key]; ok {
-			return true
+			count++
 		}
 	}
-	return false
+	return count
+}
+
+func collectTransferPreflight(ctx context.Context, runner git.Runner, sourceRoot, destinationRoot string, includeTransferState bool) (transferPreflight, error) {
+	destinationDirty, err := isDirty(ctx, runner, destinationRoot)
+	if err != nil {
+		return transferPreflight{}, err
+	}
+
+	sourceModified, err := modifiedFiles(ctx, runner, sourceRoot)
+	if err != nil {
+		return transferPreflight{}, err
+	}
+	destinationModified, err := modifiedFiles(ctx, runner, destinationRoot)
+	if err != nil {
+		return transferPreflight{}, err
+	}
+
+	preflight := transferPreflight{
+		destinationDirty: destinationDirty,
+		overlappingFiles: intersectCount(sourceModified, destinationModified),
+	}
+
+	if includeTransferState {
+		patch, err := gitDiff(ctx, runner, sourceRoot)
+		if err != nil {
+			return transferPreflight{}, err
+		}
+		preflight.trackedPatch = patch != ""
+
+		untracked, err := listUntracked(ctx, runner, sourceRoot)
+		if err != nil {
+			return transferPreflight{}, err
+		}
+		preflight.untrackedFiles = untracked
+	}
+
+	return preflight, nil
+}
+
+func conflictReasonsForApply(preflight transferPreflight, destinationName string) []string {
+	var reasons []string
+	if preflight.destinationDirty {
+		reasons = append(reasons, fmt.Sprintf("%s has uncommitted changes", destinationName))
+	}
+	if preflight.overlappingFiles > 0 {
+		reasons = append(reasons, fmt.Sprintf("both sides modified %d overlapping file(s)", preflight.overlappingFiles))
+	}
+	return reasons
+}
+
+func printDryRunPlan(out io.Writer, mode handoffMode, plan transferPlan, preflight transferPreflight) error {
+	if _, err := fmt.Fprintf(out, "%s plan\n", mode); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "  to: %s\n", plan.to); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "  source: %s\n", plan.sourceRoot); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "  destination: %s\n", plan.destinationRoot); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "  overwrite: %t\n", mode == handoffOverwrite); err != nil {
+		return err
+	}
+
+	if _, err := fmt.Fprintln(out, ""); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(out, "preflight"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "  destination_dirty: %t\n", preflight.destinationDirty); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "  overlapping_files: %d\n", preflight.overlappingFiles); err != nil {
+		return err
+	}
+	trackedPatch := "none"
+	if preflight.trackedPatch {
+		trackedPatch = "present"
+	}
+	if _, err := fmt.Fprintf(out, "  tracked_patch: %s\n", trackedPatch); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "  untracked_files: %d\n", len(preflight.untrackedFiles)); err != nil {
+		return err
+	}
+
+	if _, err := fmt.Fprintln(out, ""); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(out, "actions"); err != nil {
+		return err
+	}
+	actions := dryRunActions(mode, plan, preflight)
+	for idx, action := range actions {
+		if _, err := fmt.Fprintf(out, "  %d. %s\n", idx+1, action); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func dryRunActions(mode handoffMode, plan transferPlan, preflight transferPreflight) []string {
+	actions := make([]string, 0, len(preflight.untrackedFiles)+4)
+
+	if mode == handoffOverwrite {
+		actions = append(actions, "[destructive] "+formatGitCommand([]string{"-C", plan.destinationRoot, "reset", "--hard"}))
+		actions = append(actions, "[destructive] "+formatGitCommand([]string{"-C", plan.destinationRoot, "clean", "-fd"}))
+	}
+
+	if preflight.trackedPatch {
+		actions = append(actions, formatGitCommand([]string{"-C", plan.destinationRoot, "apply", "--check", "<temp-patch>"}))
+		actions = append(actions, formatGitCommand([]string{"-C", plan.destinationRoot, "apply", "<temp-patch>"}))
+	}
+
+	for _, rel := range preflight.untrackedFiles {
+		actions = append(actions, fmt.Sprintf("copy %s -> %s", filepath.Join(plan.sourceRoot, rel), filepath.Join(plan.destinationRoot, rel)))
+	}
+
+	if len(actions) == 0 {
+		actions = append(actions, "no tracked or untracked changes detected")
+	}
+
+	return actions
 }
 
 func transferChanges(ctx context.Context, cmd *cobra.Command, runner git.Runner, sourceRoot, destinationRoot string, dryRun, resetDestination bool) error {

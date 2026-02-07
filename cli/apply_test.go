@@ -119,3 +119,51 @@ func TestResolveTransferPlan(t *testing.T) {
 		})
 	}
 }
+
+func TestConflictReasonsForApply(t *testing.T) {
+	reasons := conflictReasonsForApply(transferPreflight{
+		destinationDirty: true,
+		overlappingFiles: 3,
+	}, "local checkout")
+
+	if len(reasons) != 2 {
+		t.Fatalf("expected 2 reasons, got %d", len(reasons))
+	}
+	if !strings.Contains(reasons[0], "local checkout has uncommitted changes") {
+		t.Fatalf("unexpected dirty reason: %v", reasons)
+	}
+	if !strings.Contains(reasons[1], "both sides modified 3 overlapping file(s)") {
+		t.Fatalf("unexpected overlap reason: %v", reasons)
+	}
+}
+
+func TestDryRunActions(t *testing.T) {
+	plan := transferPlan{
+		destinationRoot: "/repo",
+		sourceRoot:      "/codex",
+	}
+	preflight := transferPreflight{
+		trackedPatch:   true,
+		untrackedFiles: []string{"a.txt"},
+	}
+
+	actions := dryRunActions(handoffOverwrite, plan, preflight)
+	if len(actions) != 5 {
+		t.Fatalf("expected 5 actions, got %d (%v)", len(actions), actions)
+	}
+	if !strings.Contains(actions[0], "[destructive] git -C /repo reset --hard") {
+		t.Fatalf("expected destructive reset action, got %q", actions[0])
+	}
+	if !strings.Contains(actions[1], "[destructive] git -C /repo clean -fd") {
+		t.Fatalf("expected destructive clean action, got %q", actions[1])
+	}
+	if !strings.Contains(actions[2], "apply --check <temp-patch>") {
+		t.Fatalf("expected apply check action, got %q", actions[2])
+	}
+	if !strings.Contains(actions[3], "apply <temp-patch>") {
+		t.Fatalf("expected apply action, got %q", actions[3])
+	}
+	if !strings.Contains(actions[4], "copy /codex/a.txt -> /repo/a.txt") {
+		t.Fatalf("expected copy action, got %q", actions[4])
+	}
+}

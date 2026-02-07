@@ -51,14 +51,14 @@ Implement a two-way `apply`/`overwrite` command model in codex mode with explici
 
 ### Phase 4: Dry-Run and Messages
 
-- [ ] Implement structured dry-run plan output with explicit source/destination and destructive markers.
-- [ ] Update user-facing conflict and next-step guidance.
+- [x] Implement structured dry-run plan output with explicit source/destination and destructive markers.
+- [x] Update user-facing conflict and next-step guidance.
 
 ### Phase 5: Tests and Docs
 
-- [ ] Add/adjust unit and integration tests for direction + overwrite behaviors.
-- [ ] Update README/man pages/help text for new command semantics.
-- [ ] Update related research and mark this plan status appropriately.
+- [x] Add/adjust unit and integration tests for direction + overwrite behaviors.
+- [x] Update README/man pages/help text for new command semantics.
+- [x] Update related research and mark this plan status appropriately.
 
 ### Phase 6: Apply File-Split Refactor
 

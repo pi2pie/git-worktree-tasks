@@ -131,9 +131,12 @@ Apply vs overwrite matrix:
   - `overwrite --to local|worktree`
   - `apply --force` compatibility alias
   - no implicit direction switching on `apply` conflicts
+  - dry-run plan-style output with `plan`, `preflight`, and `actions` sections
+  - conflict output updated with explicit overwrite next-step guidance
+  - README/man/help updates for `apply` + `overwrite` semantics
 - Pending:
-  - dry-run plan-style output redesign
   - split `cli/apply.go` into focused files (`apply_command`, `apply_resolve`, `apply_conflicts`, `apply_transfer`, `apply_files`)
+  - post-refactor verification/doc pass after the file-split phase
 
 ## Dry-Run Output Redesign (Draft)
 

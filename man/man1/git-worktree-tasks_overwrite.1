@@ -2,15 +2,15 @@
 .TH "GIT-WORKTREE-TASKS" "1" "Feb 2026" "git-worktree-tasks" "Git Worktree Tasks Manual"
 
 .SH NAME
-git-worktree-tasks-apply - Apply non-destructive changes between a Codex worktree and local checkout
+git-worktree-tasks-overwrite - Overwrite destination with source changes in codex mode
 
 
 .SH SYNOPSIS
-\fBgit-worktree-tasks apply  [flags]\fP
+\fBgit-worktree-tasks overwrite  [flags]\fP
 
 
 .SH DESCRIPTION
-Apply non-destructive changes between a Codex worktree and local checkout
+Overwrite destination with source changes in codex mode
 
 
 .SH OPTIONS
@@ -18,12 +18,8 @@ Apply non-destructive changes between a Codex worktree and local checkout
 	show git commands without executing
 
 .PP
-\fB--force\fP[=false]
-	compatibility alias for overwrite behavior
-
-.PP
 \fB-h\fP, \fB--help\fP[=false]
-	help for apply
+	help for overwrite
 
 .PP
 \fB--to\fP="local"

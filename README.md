@@ -257,7 +257,8 @@ name = "nord"
 
 | Command   | Alias | Description                                                          |
 | --------- | ----- | -------------------------------------------------------------------- |
-| `apply`   |       | Apply Codex worktree changes to the local checkout (codex mode only) |
+| `apply`   |       | Apply non-destructive changes between Codex worktree and local checkout (codex mode only) |
+| `overwrite` |     | Destructively replace destination with source changes in codex mode |
 | `create`  |       | Create a worktree and branch for a task                              |
 | `list`    | `ls`  | List task worktrees                                                  |
 | `status`  |       | Show detailed worktree status                                        |
@@ -399,20 +400,30 @@ gwtt finish "my-task" --cleanup --yes
 ### Applying Changes (Codex Mode)
 
 ```bash
-# Apply Codex worktree changes to local checkout
+# Non-destructive apply (default direction: worktree -> local)
 gwtt --mode codex apply <opaque-id>
 
-# Overwrite Codex worktree from local checkout without prompts
-gwtt --mode codex apply <opaque-id> --yes
+# Reverse non-destructive apply (local -> worktree)
+gwtt --mode codex apply <opaque-id> --to worktree
 
-# Preview without executing
+# Destructive overwrite (requires confirmation unless --yes)
+gwtt --mode codex overwrite <opaque-id> --to local
+gwtt --mode codex overwrite <opaque-id> --to worktree --yes
+
+# Compatibility alias for overwrite
+gwtt --mode codex apply <opaque-id> --to worktree --force --yes
+
+# Preview with structured plan + command echo
 gwtt --mode codex apply <opaque-id> --dry-run
 ```
 
 **Notes:**
 
 - In codex mode, `<opaque-id>` is the directory directly under `$CODEX_HOME/worktrees`.
-- If conflicts are detected, `gwtt` prompts to overwrite the Codex worktree (second confirmation). `--yes` skips prompts.
+- `apply` is non-destructive and will not switch direction automatically on conflict.
+- On conflict, `apply` exits with a next-step hint for `overwrite --to ...`.
+- `overwrite` resets/cleans the destination before transfer and is destructive by design.
+- `--dry-run` prints `plan`, `preflight`, and `actions` sections, then echoes the underlying git/copy operations.
 
 ### Cleanup
 
