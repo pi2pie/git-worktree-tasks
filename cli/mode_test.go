@@ -69,6 +69,20 @@ func TestModePrecedence(t *testing.T) {
 			t.Fatalf("mode = %q, want %q", got, modeClassic)
 		}
 	})
+
+	t.Run("short_flag_over_env", func(t *testing.T) {
+		project := t.TempDir()
+		t.Setenv("HOME", t.TempDir())
+		t.Setenv("GWTT_MODE", "codex")
+
+		got, err := runModeCommand(t, project, "-m", "classic")
+		if err != nil {
+			t.Fatalf("run command: %v", err)
+		}
+		if got != modeClassic {
+			t.Fatalf("mode = %q, want %q", got, modeClassic)
+		}
+	})
 }
 
 func TestModeValidation(t *testing.T) {

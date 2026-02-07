@@ -164,7 +164,7 @@ ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 
 Settings resolve in this order (highest precedence first):
 
-1. `--theme` / `--mode` flags
+1. `--theme` / `--mode` (`-m`) flags
 2. Environment variables
 3. Project config (`gwtt.config.toml` or `gwtt.toml` in repo root)
 4. User config (`$HOME/.config/gwtt/config.toml`)
@@ -652,4 +652,4 @@ This project is licensed under the MIT License — see the [LICENSE](https://git
 - Task names are slugified (lowercase, hyphens replace spaces)
 - Paths are relative by default; use `--abs` for absolute
 - Use `--dry-run` to preview git commands
-- Global flags: `--mode`, `--theme`, `--nocolor`, `--themes`
+- Global flags: `--mode` (`-m`), `--theme`, `--nocolor`, `--themes`

@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.1.2-alpha.1"
+var Version = "0.1.2-alpha.2"
 
 var (
 	errCanceled     = errors.New("git worktree task process canceled")
@@ -77,7 +77,7 @@ func gitWorkTreeCommand() (*cobra.Command, *runState) {
 	cmd.SetErr(os.Stderr)
 	cmd.PersistentFlags().BoolVar(&state.noColor, "nocolor", false, "disable color output")
 	cmd.PersistentFlags().StringVar(&state.theme, "theme", ui.DefaultThemeName(), "color theme: "+strings.Join(ui.ThemeNames(), ", "))
-	cmd.PersistentFlags().StringVar(&state.mode, "mode", "classic", "execution mode: classic or codex")
+	cmd.PersistentFlags().StringVarP(&state.mode, "mode", "m", "classic", "execution mode: classic or codex")
 	cmd.PersistentFlags().BoolVar(&state.listThemes, "themes", false, "print available themes and exit")
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if state.listThemes {
