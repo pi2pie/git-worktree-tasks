@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "0.1.2-alpha.3"
+var Version = "0.1.2"
 
 var (
 	errCanceled     = errors.New("git worktree task process canceled")
