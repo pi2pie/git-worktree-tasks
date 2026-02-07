@@ -151,7 +151,7 @@ func runCodexHandoff(cmd *cobra.Command, opaqueID string, opts handoffOptions, m
 			if err := printOverwriteHint(cmd.OutOrStdout(), plan.to, opaqueID); err != nil {
 				return err
 			}
-			return fmt.Errorf("apply aborted due to conflicts")
+			return errApplyBlocked
 		}
 	}
 
@@ -172,7 +172,7 @@ func runCodexHandoff(cmd *cobra.Command, opaqueID string, opts handoffOptions, m
 				if err := printOverwriteHint(cmd.OutOrStdout(), plan.to, opaqueID); err != nil {
 					return err
 				}
-				return fmt.Errorf("apply aborted due to conflicts")
+				return errApplyBlocked
 			}
 		}
 		return err

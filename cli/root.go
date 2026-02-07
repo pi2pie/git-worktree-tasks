@@ -16,6 +16,7 @@ var Version = "0.1.2-alpha.2"
 var (
 	errCanceled     = errors.New("git worktree task process canceled")
 	errThemesListed = errors.New("themes listed")
+	errApplyBlocked = errors.New("apply aborted due to conflicts")
 )
 
 func Execute() int {
@@ -27,6 +28,9 @@ func Execute() int {
 		if errors.Is(err, errCanceled) {
 			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), ui.WarningStyle.Render("git worktree task process canceled"))
 			return 3
+		}
+		if errors.Is(err, errApplyBlocked) {
+			return 2
 		}
 		_, _ = fmt.Fprintln(cmd.ErrOrStderr(), ui.ErrorStyle.Render(err.Error()))
 		return 1

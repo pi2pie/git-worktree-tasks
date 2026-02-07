@@ -2,8 +2,14 @@ package cli
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestDetectApplyConflicts(t *testing.T) {
@@ -148,8 +154,8 @@ func TestDryRunActions(t *testing.T) {
 	}
 
 	actions := dryRunActions(handoffOverwrite, plan, preflight)
-	if len(actions) != 5 {
-		t.Fatalf("expected 5 actions, got %d (%v)", len(actions), actions)
+	if len(actions) != 4 {
+		t.Fatalf("expected 4 actions, got %d (%v)", len(actions), actions)
 	}
 	if !strings.Contains(actions[0], "[destructive] git -C /repo reset --hard") {
 		t.Fatalf("expected destructive reset action, got %q", actions[0])
@@ -157,13 +163,144 @@ func TestDryRunActions(t *testing.T) {
 	if !strings.Contains(actions[1], "[destructive] git -C /repo clean -fd") {
 		t.Fatalf("expected destructive clean action, got %q", actions[1])
 	}
-	if !strings.Contains(actions[2], "apply --check <temp-patch>") {
-		t.Fatalf("expected apply check action, got %q", actions[2])
+	if !strings.Contains(actions[2], "apply <temp-patch>") {
+		t.Fatalf("expected apply action, got %q", actions[2])
 	}
-	if !strings.Contains(actions[3], "apply <temp-patch>") {
-		t.Fatalf("expected apply action, got %q", actions[3])
+	if strings.Contains(actions[2], "--check") {
+		t.Fatalf("overwrite dry-run should not include apply --check, got %q", actions[2])
 	}
-	if !strings.Contains(actions[4], "copy /codex/a.txt -> /repo/a.txt") {
-		t.Fatalf("expected copy action, got %q", actions[4])
+	if !strings.Contains(actions[3], "copy /codex/a.txt -> /repo/a.txt") {
+		t.Fatalf("expected copy action, got %q", actions[3])
+	}
+}
+
+func TestDryRunActionsApplyIncludesPatchCheck(t *testing.T) {
+	plan := transferPlan{
+		destinationRoot: "/repo",
+		sourceRoot:      "/codex",
+	}
+	preflight := transferPreflight{
+		trackedPatch: true,
+	}
+
+	actions := dryRunActions(handoffApply, plan, preflight)
+	if len(actions) != 2 {
+		t.Fatalf("expected 2 actions, got %d (%v)", len(actions), actions)
+	}
+	if !strings.Contains(actions[0], "apply --check <temp-patch>") {
+		t.Fatalf("expected apply --check action, got %q", actions[0])
+	}
+	if !strings.Contains(actions[1], "apply <temp-patch>") {
+		t.Fatalf("expected apply action, got %q", actions[1])
+	}
+}
+
+type overwriteRunner struct {
+	source    string
+	dest      string
+	seenCheck bool
+	seenApply bool
+}
+
+func (r *overwriteRunner) Run(_ context.Context, args ...string) (string, string, error) {
+	switch {
+	case len(args) == 4 && args[0] == "-C" && args[1] == r.dest && args[2] == "reset" && args[3] == "--hard":
+		return "", "", nil
+	case len(args) == 4 && args[0] == "-C" && args[1] == r.dest && args[2] == "clean" && args[3] == "-fd":
+		return "", "", nil
+	case len(args) == 5 && args[0] == "-C" && args[1] == r.source && args[2] == "diff" && args[3] == "--binary" && args[4] == "HEAD":
+		return "diff --git a/a.txt b/a.txt\n", "", nil
+	case len(args) == 5 && args[0] == "-C" && args[1] == r.source && args[2] == "ls-files" && args[3] == "--others" && args[4] == "--exclude-standard":
+		return "", "", nil
+	case len(args) == 5 && args[0] == "-C" && args[1] == r.dest && args[2] == "apply" && args[3] == "--check":
+		r.seenCheck = true
+		return "", "", fmt.Errorf("unexpected apply --check in overwrite mode")
+	case len(args) == 4 && args[0] == "-C" && args[1] == r.dest && args[2] == "apply":
+		r.seenApply = true
+		return "", "", nil
+	default:
+		return "", "", fmt.Errorf("unexpected args: %s", strings.Join(args, " "))
+	}
+}
+
+func TestTransferChangesOverwriteSkipsPatchCheck(t *testing.T) {
+	runner := &overwriteRunner{
+		source: "/codex",
+		dest:   "/repo",
+	}
+	cmd := &cobra.Command{}
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	err := transferChanges(context.Background(), cmd, runner, "/codex", "/repo", false, true)
+	if err != nil {
+		t.Fatalf("transferChanges() error = %v", err)
+	}
+	if runner.seenCheck {
+		t.Fatalf("overwrite flow should skip apply --check")
+	}
+	if !runner.seenApply {
+		t.Fatalf("expected overwrite flow to apply patch")
+	}
+}
+
+type overwriteFallbackRunner struct {
+	source string
+	dest   string
+}
+
+func (r *overwriteFallbackRunner) Run(_ context.Context, args ...string) (string, string, error) {
+	switch {
+	case len(args) == 4 && args[0] == "-C" && args[1] == r.dest && args[2] == "reset" && args[3] == "--hard":
+		return "", "", nil
+	case len(args) == 4 && args[0] == "-C" && args[1] == r.dest && args[2] == "clean" && args[3] == "-fd":
+		return "", "", nil
+	case len(args) == 5 && args[0] == "-C" && args[1] == r.source && args[2] == "diff" && args[3] == "--binary" && args[4] == "HEAD":
+		return "diff --git a/tracked.txt b/tracked.txt\n", "", nil
+	case len(args) == 5 && args[0] == "-C" && args[1] == r.dest && args[2] == "apply":
+		return "", "", fmt.Errorf("simulated apply failure")
+	case len(args) == 5 && args[0] == "-C" && args[1] == r.source && args[2] == "diff" && args[3] == "--name-status" && args[4] == "HEAD":
+		return "M\ttracked.txt\n", "", nil
+	case len(args) == 5 && args[0] == "-C" && args[1] == r.source && args[2] == "ls-files" && args[3] == "--others" && args[4] == "--exclude-standard":
+		return "", "", nil
+	default:
+		return "", "", fmt.Errorf("unexpected args: %s", strings.Join(args, " "))
+	}
+}
+
+func TestTransferChangesOverwriteFallsBackAfterApplyFailure(t *testing.T) {
+	sourceRoot := t.TempDir()
+	destinationRoot := t.TempDir()
+	writeFile := func(root, rel, content string) {
+		t.Helper()
+		path := filepath.Join(root, rel)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("MkdirAll(%s): %v", path, err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatalf("WriteFile(%s): %v", path, err)
+		}
+	}
+	writeFile(sourceRoot, "tracked.txt", "new content\n")
+	writeFile(destinationRoot, "tracked.txt", "old content\n")
+
+	runner := &overwriteFallbackRunner{
+		source: sourceRoot,
+		dest:   destinationRoot,
+	}
+	cmd := &cobra.Command{}
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	err := transferChanges(context.Background(), cmd, runner, sourceRoot, destinationRoot, false, true)
+	if err != nil {
+		t.Fatalf("transferChanges() error = %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join(destinationRoot, "tracked.txt"))
+	if err != nil {
+		t.Fatalf("ReadFile(tracked.txt): %v", err)
+	}
+	if string(got) != "new content\n" {
+		t.Fatalf("destination tracked.txt = %q, want %q", string(got), "new content\n")
 	}
 }
