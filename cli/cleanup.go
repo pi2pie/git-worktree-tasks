@@ -29,19 +29,13 @@ func newCleanupCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
-			mode := modeClassic
-			var codexHome string
-			var codexWorktrees string
+			modeCtx, err := resolveModeContext(cmd, false)
+			if err != nil {
+				return err
+			}
+			mode := modeCtx.mode
+			codexWorktrees := modeCtx.codexWorktrees
 			if cfg, ok := configFromContext(cmd.Context()); ok {
-				mode = cfg.Mode
-				if mode == modeCodex {
-					var err error
-					codexHome, err = codexHomeDir()
-					if err != nil {
-						return err
-					}
-					codexWorktrees = codexWorktreesRoot(codexHome)
-				}
 				if !cmd.Flags().Changed("yes") {
 					opts.yes = !cfg.Cleanup.Confirm
 				}
@@ -109,18 +103,9 @@ func newCleanupCommand() *cobra.Command {
 				if query == "" {
 					return fmt.Errorf("task query cannot be empty")
 				}
-				for _, wt := range worktrees {
-					wtAbs, err := worktree.NormalizePath(repoRoot, wt.Path)
-					if err != nil {
-						return err
-					}
-					opaqueID, _, ok := codexWorktreeInfo(codexWorktrees, wtAbs)
-					if !ok || opaqueID != query {
-						continue
-					}
-					resolvedPath = wtAbs
-					worktreeExists = true
-					break
+				resolvedPath, worktreeExists, err = resolveCodexWorktreePathFromList(worktrees, repoRoot, codexWorktrees, query)
+				if err != nil {
+					return err
 				}
 			} else {
 				branchRef := "refs/heads/" + branch

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -208,23 +207,6 @@ func validateMergeStrategy(opts *finishOptions) error {
 	}
 	if strategyCount > 1 {
 		return fmt.Errorf("merge strategies are mutually exclusive: choose only one of --no-ff, --squash, --rebase")
-	}
-	return nil
-}
-
-func runGit(ctx context.Context, cmd *cobra.Command, dryRun bool, runner git.Runner, args ...string) error {
-	if dryRun {
-		if _, err := fmt.Fprintln(cmd.OutOrStdout(), formatGitCommand(args)); err != nil {
-			return err
-		}
-		return nil
-	}
-	_, stderr, err := runner.Run(ctx, args...)
-	if err != nil {
-		if stderr != "" {
-			return fmt.Errorf("%s: %w: %s", formatGitCommand(args), err, stderr)
-		}
-		return fmt.Errorf("%s: %w", formatGitCommand(args), err)
 	}
 	return nil
 }

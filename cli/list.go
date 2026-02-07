@@ -43,25 +43,15 @@ func newListCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			runner := defaultRunner()
-			mode := modeClassic
-			var codexHome string
-			var codexWorktrees string
+			modeCtx, err := resolveModeContext(cmd, true)
+			if err != nil {
+				return err
+			}
+			mode := modeCtx.mode
+			codexHome := modeCtx.codexHome
+			codexWorktrees := modeCtx.codexWorktrees
 			var rawBase string
 			if cfg, ok := configFromContext(cmd.Context()); ok {
-				mode = cfg.Mode
-				if mode == modeCodex {
-					var err error
-					codexHome, err = codexHomeDir()
-					if err != nil {
-						return err
-					}
-					codexWorktrees = codexWorktreesRoot(codexHome)
-				} else {
-					if home, err := codexHomeDir(); err == nil {
-						codexHome = home
-						codexWorktrees = codexWorktreesRoot(codexHome)
-					}
-				}
 				if !cmd.Flags().Changed("output") {
 					opts.output = cfg.List.Output
 				}

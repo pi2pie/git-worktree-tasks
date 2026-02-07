@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/pi2pie/git-worktree-tasks/internal/git"
-	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
 	"github.com/pi2pie/git-worktree-tasks/ui"
 	"github.com/spf13/cobra"
 )
@@ -42,8 +41,12 @@ func newApplyCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
+			modeCtx, err := resolveModeContext(cmd, false)
+			if err != nil {
+				return err
+			}
 			cfg, ok := configFromContext(ctx)
-			if !ok || cfg.Mode != modeCodex {
+			if !ok || modeCtx.mode != modeCodex {
 				return fmt.Errorf("apply is only supported in --mode=codex")
 			}
 
@@ -65,13 +68,7 @@ func newApplyCommand() *cobra.Command {
 				return fmt.Errorf("task query cannot be empty")
 			}
 
-			codexHome, err := codexHomeDir()
-			if err != nil {
-				return err
-			}
-			codexWorktrees := codexWorktreesRoot(codexHome)
-
-			wtPath, ok, err := resolveCodexWorktreePath(ctx, runner, repoRoot, codexWorktrees, opaqueID)
+			wtPath, ok, err := resolveCodexWorktreePath(ctx, runner, repoRoot, modeCtx.codexWorktrees, opaqueID)
 			if err != nil {
 				return err
 			}
@@ -149,25 +146,6 @@ func newApplyCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.yes, "yes", false, "skip confirmation prompts")
 	cmd.Flags().BoolVar(&opts.dryRun, "dry-run", false, "show git commands without executing")
 	return cmd
-}
-
-func resolveCodexWorktreePath(ctx context.Context, runner git.Runner, repoRoot, codexWorktreesRoot, opaqueID string) (string, bool, error) {
-	worktrees, err := worktree.List(ctx, runner, repoRoot)
-	if err != nil {
-		return "", false, err
-	}
-	for _, wt := range worktrees {
-		wtAbs, err := worktree.NormalizePath(repoRoot, wt.Path)
-		if err != nil {
-			return "", false, err
-		}
-		id, _, ok := codexWorktreeInfo(codexWorktreesRoot, wtAbs)
-		if !ok || id != opaqueID {
-			continue
-		}
-		return wtAbs, true, nil
-	}
-	return "", false, nil
 }
 
 func detectApplyConflicts(ctx context.Context, runner git.Runner, repoRoot, worktreePath string) ([]string, error) {
