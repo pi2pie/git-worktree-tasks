@@ -28,8 +28,8 @@ func TestRunGitDryRunMasksPathsByDefault(t *testing.T) {
 		t.Fatalf("runGit() error = %v", err)
 	}
 	got := strings.TrimSpace(out.String())
-	if got != "git -C '$HOME/repo' status" {
-		t.Fatalf("runGit() output = %q, want %q", got, "git -C '$HOME/repo' status")
+	if got != `git -C "$HOME/repo" status` {
+		t.Fatalf("runGit() output = %q, want %q", got, `git -C "$HOME/repo" status`)
 	}
 }
 

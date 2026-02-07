@@ -50,7 +50,33 @@ func formatGitCommandForDryRunWithContext(args []string, maskCtx pathMaskContext
 	if !maskCtx.enabled {
 		return formatGitCommand(args)
 	}
-	return "git " + formatArgs(maskGitArgs(args, maskCtx))
+	return "git " + formatDryRunArgs(maskGitArgs(args, maskCtx), maskCtx)
+}
+
+func formatDryRunArgs(args []string, maskCtx pathMaskContext) string {
+	parts := make([]string, 0, len(args))
+	for _, arg := range args {
+		parts = append(parts, quoteDryRunArg(arg, maskCtx))
+	}
+	return strings.Join(parts, " ")
+}
+
+func quoteDryRunArg(arg string, maskCtx pathMaskContext) string {
+	if !maskCtx.windows && strings.HasPrefix(arg, posixHomeToken) {
+		return quotePosixHomeArg(arg)
+	}
+	return shellQuote(arg)
+}
+
+func quotePosixHomeArg(path string) string {
+	rest := path[len(posixHomeToken):]
+	escapedRest := strings.NewReplacer(
+		`\`, `\\`,
+		`"`, `\"`,
+		"`", "\\`",
+		"$", `\$`,
+	).Replace(rest)
+	return `"$HOME` + escapedRest + `"`
 }
 
 func maskGitArgs(args []string, maskCtx pathMaskContext) []string {

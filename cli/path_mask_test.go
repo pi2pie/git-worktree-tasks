@@ -99,6 +99,24 @@ func TestFormatGitCommandForDryRunWithContext(t *testing.T) {
 	if strings.Contains(got, "/Users/alice/repo") {
 		t.Fatalf("did not expect raw home path in output, got %q", got)
 	}
+	if strings.Contains(got, "'$HOME/") {
+		t.Fatalf("did not expect single-quoted masked path, got %q", got)
+	}
+}
+
+func TestFormatGitCommandForDryRunWithContextKeepsMaskedPathsExecutable(t *testing.T) {
+	args := []string{"-C", "/Users/alice/repo with spaces", "status"}
+	maskCtx := pathMaskContext{
+		enabled: true,
+		home:    "/Users/alice",
+		windows: false,
+	}
+
+	got := formatGitCommandForDryRunWithContext(args, maskCtx)
+	want := `git -C "$HOME/repo with spaces" status`
+	if got != want {
+		t.Fatalf("formatGitCommandForDryRunWithContext() = %q, want %q", got, want)
+	}
 }
 
 func TestFormatGitCommandForDryRunWithContextDisabled(t *testing.T) {
