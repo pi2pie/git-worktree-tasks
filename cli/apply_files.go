@@ -41,7 +41,7 @@ func copyFile(srcRoot, dstRoot, rel string, dryRun bool, out io.Writer, maskPath
 			return err
 		}
 		if dryRun {
-			_, err := fmt.Fprintf(out, "symlink %s -> %s (%s)\n", maskPathForDryRun(srcPath, maskPaths), maskPathForDryRun(dstPath, maskPaths), target)
+			_, err := fmt.Fprintf(out, "symlink %s -> %s (%s)\n", maskPathForDryRun(srcPath, maskPaths), maskPathForDryRun(dstPath, maskPaths), maskPathForDryRun(target, maskPaths))
 			return err
 		}
 		if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
