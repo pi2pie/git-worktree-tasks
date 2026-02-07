@@ -1,6 +1,6 @@
 ---
 title: "Build flow and installation strategy for gwtt command"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: Zed Agent
 ---
@@ -8,6 +8,7 @@ agent: Zed Agent
 ## Problem
 
 Currently, the CLI tool has two command names:
+
 - `git-worktree-tasks` (primary name in `go.mod`)
 - `gwtt` (alias defined in Cobra)
 
@@ -46,12 +47,14 @@ Create a dedicated scripts directory for Go-specific workflows:
 ### 2. Build and Installation
 
 **Makefile Targets:**
+
 - `make build` — Build both `git-worktree-tasks` and `gwtt` binaries locally
 - `make go-install` — Build and install both binaries to `$GOPATH/bin` (requires Go)
 - `make go-uninstall` — Remove both binaries from `$GOPATH/bin` (requires Go)
 - `make clean` — Clean up local build artifacts
 
 **Shell Script (`./scripts/go-install.sh`):**
+
 - Requires Go to be installed
 - Builds both binaries
 - Installs to `$GOPATH/bin` (or custom path if provided)
@@ -65,27 +68,32 @@ Document three approaches for users across different shells:
 #### Option A: Shell Alias (Recommended for Simplicity)
 
 **For Bash (`~/.bashrc`):**
+
 ```bash
 alias gwtt="git-worktree-tasks"
 ```
 
 **For Zsh (`~/.zshrc`):**
+
 ```bash
 alias gwtt="git-worktree-tasks"
 ```
 
 **For Fish (`~/.config/fish/config.fish`):**
+
 ```fish
 alias gwtt git-worktree-tasks
 ```
 
 **Pros:**
+
 - Easy to add and remove
 - No filesystem clutter
 - Works across systems
 - Can be disabled quickly
 
 **Cons:**
+
 - Must be added to each shell profile
 - Not available to non-shell tools
 
@@ -100,11 +108,13 @@ ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 ```
 
 **Pros:**
+
 - Works everywhere (shell, scripts, IDEs)
 - Binary-level shortcut
 - No shell-specific configuration needed
 
 **Cons:**
+
 - Requires cleanup
 - May conflict with other installations
 - Requires manual removal
@@ -120,18 +130,21 @@ rm $(dirname $(which git-worktree-tasks))/gwtt
 Users have three paths:
 
 **Path 1: Using Makefile (Easiest for developers)**
+
 ```bash
 make go-install
 # Then add alias to shell config (Bash, Zsh, or Fish), or create symlink manually
 ```
 
 **Path 2: Using Script Directly**
+
 ```bash
 ./scripts/go-install.sh
 # Then add alias to shell config (Bash, Zsh, or Fish), or create symlink manually
 ```
 
 **Path 3: Standard go install (Basic, Go-native)**
+
 ```bash
 go install ./
 # Only git-worktree-tasks available; use alias or symlink for gwtt
@@ -140,18 +153,21 @@ go install ./
 ### 5. Uninstallation Instructions
 
 **Using Makefile:**
+
 ```bash
 make go-uninstall
 # Also remove alias from shell config or delete symlink if created
 ```
 
 **Using Script Directly:**
+
 ```bash
 ./scripts/go-uninstall.sh
 # Also remove alias from shell config or delete symlink if created
 ```
 
 **Manual Cleanup:**
+
 ```bash
 rm $(which git-worktree-tasks)
 rm $(which gwtt)  # If symlink was created

@@ -2,15 +2,15 @@
 .TH "GWTT" "1" "Feb 2026" "gwtt" "Git Worktree Tasks Manual"
 
 .SH NAME
-gwtt-apply - Apply changes between a Codex worktree and the local checkout
+gwtt-apply - Apply non-destructive changes between a Codex worktree and local checkout
 
 
 .SH SYNOPSIS
-\fBgwtt apply <task> [flags]\fP
+\fBgwtt apply  [flags]\fP
 
 
 .SH DESCRIPTION
-Apply changes between a Codex worktree and the local checkout
+Apply non-destructive changes between a Codex worktree and local checkout
 
 
 .SH OPTIONS
@@ -18,8 +18,16 @@ Apply changes between a Codex worktree and the local checkout
 	show git commands without executing
 
 .PP
+\fB--force\fP[=false]
+	compatibility alias for overwrite behavior
+
+.PP
 \fB-h\fP, \fB--help\fP[=false]
 	help for apply
+
+.PP
+\fB--to\fP="local"
+	transfer destination: local or worktree
 
 .PP
 \fB--yes\fP[=false]
@@ -27,8 +35,16 @@ Apply changes between a Codex worktree and the local checkout
 
 
 .SH OPTIONS INHERITED FROM PARENT COMMANDS
-\fB--mode\fP="classic"
+\fB--mask-sensitive-paths\fP[=true]
+	mask home-directory paths in --dry-run output
+
+.PP
+\fB-m\fP, \fB--mode\fP="classic"
 	execution mode: classic or codex
+
+.PP
+\fB--no-mask-sensitive-paths\fP[=false]
+	disable home-directory path masking in --dry-run output
 
 .PP
 \fB--nocolor\fP[=false]

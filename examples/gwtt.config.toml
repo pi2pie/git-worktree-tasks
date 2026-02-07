@@ -10,6 +10,9 @@ color_enabled = true
 [table]
 grid = false
 
+[dry_run]
+mask_sensitive_paths = true # set false to keep raw absolute paths in --dry-run output (CLI: --no-mask-sensitive-paths)
+
 [create]
 output = "text"
 skip_existing = false

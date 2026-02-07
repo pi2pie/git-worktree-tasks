@@ -1,0 +1,59 @@
+.nh
+.TH "GIT-WORKTREE-TASKS" "1" "Feb 2026" "git-worktree-tasks" "Git Worktree Tasks Manual"
+
+.SH NAME
+git-worktree-tasks-overwrite - Overwrite destination with source changes in codex mode
+
+
+.SH SYNOPSIS
+\fBgit-worktree-tasks overwrite  [flags]\fP
+
+
+.SH DESCRIPTION
+Overwrite destination with source changes in codex mode
+
+
+.SH OPTIONS
+\fB--dry-run\fP[=false]
+	show git commands without executing
+
+.PP
+\fB-h\fP, \fB--help\fP[=false]
+	help for overwrite
+
+.PP
+\fB--to\fP="local"
+	transfer destination: local or worktree
+
+.PP
+\fB--yes\fP[=false]
+	skip confirmation prompts
+
+
+.SH OPTIONS INHERITED FROM PARENT COMMANDS
+\fB--mask-sensitive-paths\fP[=true]
+	mask home-directory paths in --dry-run output
+
+.PP
+\fB-m\fP, \fB--mode\fP="classic"
+	execution mode: classic or codex
+
+.PP
+\fB--no-mask-sensitive-paths\fP[=false]
+	disable home-directory path masking in --dry-run output
+
+.PP
+\fB--nocolor\fP[=false]
+	disable color output
+
+.PP
+\fB--theme\fP="default"
+	color theme: default, dracula, gruvbox, nord, solarized
+
+.PP
+\fB--themes\fP[=false]
+	print available themes and exit
+
+
+.SH SEE ALSO
+\fBgit-worktree-tasks(1)\fP

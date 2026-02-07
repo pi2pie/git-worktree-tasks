@@ -18,8 +18,16 @@ Create, manage, and clean up git worktrees based on task names.
 	help for gwtt
 
 .PP
-\fB--mode\fP="classic"
+\fB--mask-sensitive-paths\fP[=true]
+	mask home-directory paths in --dry-run output
+
+.PP
+\fB-m\fP, \fB--mode\fP="classic"
 	execution mode: classic or codex
+
+.PP
+\fB--no-mask-sensitive-paths\fP[=false]
+	disable home-directory path masking in --dry-run output
 
 .PP
 \fB--nocolor\fP[=false]
@@ -35,4 +43,4 @@ Create, manage, and clean up git worktrees based on task names.
 
 
 .SH SEE ALSO
-\fBgwtt-apply(1)\fP, \fBgwtt-cleanup(1)\fP, \fBgwtt-create(1)\fP, \fBgwtt-finish(1)\fP, \fBgwtt-list(1)\fP, \fBgwtt-status(1)\fP
+\fBgwtt-apply(1)\fP, \fBgwtt-cleanup(1)\fP, \fBgwtt-create(1)\fP, \fBgwtt-finish(1)\fP, \fBgwtt-list(1)\fP, \fBgwtt-overwrite(1)\fP, \fBgwtt-status(1)\fP

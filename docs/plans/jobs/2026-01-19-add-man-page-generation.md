@@ -1,14 +1,16 @@
 ---
 title: "Add man(1) generation and install wiring"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: Codex
 ---
 
 ## Overview
+
 Added Cobra-based man(1) generation and wired it into the Go install workflow so man pages are built and installed alongside binaries.
 
 ## Changes
+
 - Added a man page generator (`scripts/generate-man.go`) using Cobra doc helpers (run twice for `git-worktree-tasks` and `gwtt`).
 - Generated and committed man pages under `man/man1` for installation packaging.
 - Exposed a `cli.RootCommand()` helper for documentation tooling.
@@ -17,6 +19,7 @@ Added Cobra-based man(1) generation and wired it into the Go install workflow so
 - Updated `scripts/go-uninstall.sh` to remove installed man pages.
 
 ## Files Touched
+
 - `cli/root.go`
 - `scripts/generate-man.go`
 - `Makefile`

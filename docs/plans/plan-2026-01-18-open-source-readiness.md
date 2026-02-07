@@ -1,15 +1,17 @@
 ---
 title: "Open-source readiness improvements"
-date: 2026-01-18
+created-date: 2026-01-18
 modified-date: 2026-01-19
 status: active
 agent: Codex
 ---
 
 ## Goal
+
 Prepare the project for an open-source release by addressing correctness gaps, UX alignment, and documentation/CI needs ahead of the next version.
 
 ## Proposed Work
+
 - [x] Add LICENSE (MIT) file.
 - [x] Add man(1) page generation (Cobra doc) and wire it into install packaging (Makefile target).
 - [x] Revisit short commit hash behavior in `internal/worktree/status.go` to allow dynamic length (7/8/10) based on repo size; document rationale and references.
@@ -23,6 +25,7 @@ Prepare the project for an open-source release by addressing correctness gaps, U
 - [x] Add CI workflow for `go test ./...` and a linter.
 
 ## Rationale
+
 - Open-source release requires clear licensing.
 - Ship a man(1) page and install it via the build tooling to align with standard CLI packaging expectations.
 - Short hash length can vary by repository size; avoid assuming a fixed 7-char hash and capture the policy.
@@ -31,7 +34,9 @@ Prepare the project for an open-source release by addressing correctness gaps, U
 - Tests and CI reduce regressions before the next version.
 
 ## Current Artifacts
+
 - LICENSE (MIT) added.
 
 ## Related Research
+
 - docs/research-2026-01-19-create-default-base.md

@@ -127,14 +127,12 @@ make go-uninstall
 
 > **Windows PATH Note:** If you install `gwtt.exe` into a custom folder (e.g., `C:\Users\<you>\bin`), add that folder to your PATH and open a new terminal to pick it up.
 
-
 > [!Note]
 > **Ownership Change (v0.0.7+)**
-> 
+>
 > The repository ownership changed after v0.0.6. The old `dev-pi2pie` path no longer exists, so use the new module path for all installs and imports:
-> 
+>
 > - **v0.0.7 and later:** `github.com/pi2pie/git-worktree-tasks`
-
 
 ## Binary Naming and Shell Configuration
 
@@ -144,15 +142,16 @@ make go-uninstall
 
 Set up the `gwtt` alias for convenience:
 
-| Shell | Config File | Alias Syntax |
-|-------|-------------|--------------|
-| Bash  | `~/.bashrc` | `alias gwtt="git-worktree-tasks"` |
-| Zsh   | `~/.zshrc`  | `alias gwtt="git-worktree-tasks"` |
-| Fish  | `~/.config/fish/config.fish` | `alias gwtt git-worktree-tasks` |
+| Shell | Config File                  | Alias Syntax                      |
+| ----- | ---------------------------- | --------------------------------- |
+| Bash  | `~/.bashrc`                  | `alias gwtt="git-worktree-tasks"` |
+| Zsh   | `~/.zshrc`                   | `alias gwtt="git-worktree-tasks"` |
+| Fish  | `~/.config/fish/config.fish` | `alias gwtt git-worktree-tasks`   |
 
 After adding, reload your shell (`source ~/.bashrc`, `source ~/.zshrc`, or `exec fish`).
 
 **Alternative:** Create a symlink:
+
 ```bash
 ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 ```
@@ -165,7 +164,7 @@ ln -s $(which git-worktree-tasks) $(dirname $(which git-worktree-tasks))/gwtt
 
 Settings resolve in this order (highest precedence first):
 
-1. `--theme` / `--mode` flags
+1. CLI flags (for example `--theme`, `--mode` / `-m`, `--mask-sensitive-paths`, `--no-mask-sensitive-paths`)
 2. Environment variables
 3. Project config (`gwtt.config.toml` or `gwtt.toml` in repo root)
 4. User config (`$HOME/.config/gwtt/config.toml`)
@@ -180,6 +179,9 @@ export GWTT_COLOR=0
 
 # Mode selection
 export GWTT_MODE=codex
+
+# Dry-run path masking (1/true/on/yes to enable, 0/false/off/no to disable)
+export GWTT_DRY_RUN_MASK_SENSITIVE_PATHS=1
 
 # List available themes
 gwtt --themes
@@ -208,6 +210,9 @@ color_enabled = true
 
 [table]
 grid = false
+
+[dry_run]
+mask_sensitive_paths = true # mask $HOME/%USERPROFILE% prefixes in --dry-run output
 
 [list]
 output = "table"
@@ -238,12 +243,18 @@ worktree_only = false
 force_branch = false
 ```
 
+`[dry_run].mask_sensitive_paths` defaults to `true`. Set it to `false` if you need raw absolute paths in `--dry-run` output.  
+When enabled, home-prefixed paths are rendered as `$HOME/...` on POSIX and `%USERPROFILE%\\...` on Windows.
+You can override this per-invocation with `--mask-sensitive-paths=true|false`, `--no-mask-sensitive-paths`, or via `GWTT_DRY_RUN_MASK_SENSITIVE_PATHS`.
+For bool flags, prefer `--mask-sensitive-paths=false` (with `=`) rather than `--mask-sensitive-paths false`.
+
 ### Config File Location
 
 Project: `gwtt.config.toml` or `gwtt.toml` in the repo root  
 User: `$HOME/.config/gwtt/config.toml`
 
 **Minimal config:**
+
 ```toml
 [theme]
 name = "nord"
@@ -255,14 +266,15 @@ name = "nord"
 
 ### Commands Overview
 
-| Command   | Alias | Description |
-|-----------|-------|-------------|
-| `apply`   |       | Apply Codex worktree changes to the local checkout (codex mode only) |
-| `create`  |       | Create a worktree and branch for a task |
-| `list`    | `ls`  | List task worktrees |
-| `status`  |       | Show detailed worktree status |
-| `finish`  |       | Merge a task branch into target |
-| `cleanup` | `rm`  | Remove a task worktree and/or branch |
+| Command   | Alias | Description                                                          |
+| --------- | ----- | -------------------------------------------------------------------- |
+| `apply`   |       | Apply non-destructive changes between Codex worktree and local checkout (codex mode only) |
+| `overwrite` |     | Destructively replace destination with source changes in codex mode |
+| `create`  |       | Create a worktree and branch for a task                              |
+| `list`    | `ls`  | List task worktrees                                                  |
+| `status`  |       | Show detailed worktree status                                        |
+| `finish`  |       | Merge a task branch into target                                      |
+| `cleanup` | `rm`  | Remove a task worktree and/or branch                                 |
 
 ### Creating Worktrees
 
@@ -293,6 +305,7 @@ gwtt create "my-task" --dry-run
 | `--dry-run` | | Show git commands without executing |
 
 **Notes:**
+
 - The default base is the current local branch (for example `main`, `master`, or `dev`).
 - If you are in a detached HEAD state, you must pass `--base` explicitly.
 
@@ -398,19 +411,30 @@ gwtt finish "my-task" --cleanup --yes
 ### Applying Changes (Codex Mode)
 
 ```bash
-# Apply Codex worktree changes to local checkout
+# Non-destructive apply (default direction: worktree -> local)
 gwtt --mode codex apply <opaque-id>
 
-# Overwrite Codex worktree from local checkout without prompts
-gwtt --mode codex apply <opaque-id> --yes
+# Reverse non-destructive apply (local -> worktree)
+gwtt --mode codex apply <opaque-id> --to worktree
 
-# Preview without executing
+# Destructive overwrite (requires confirmation unless --yes)
+gwtt --mode codex overwrite <opaque-id> --to local
+gwtt --mode codex overwrite <opaque-id> --to worktree --yes
+
+# Compatibility alias for overwrite
+gwtt --mode codex apply <opaque-id> --to worktree --force --yes
+
+# Preview with structured plan + command echo
 gwtt --mode codex apply <opaque-id> --dry-run
 ```
 
 **Notes:**
+
 - In codex mode, `<opaque-id>` is the directory directly under `$CODEX_HOME/worktrees`.
-- If conflicts are detected, `gwtt` prompts to overwrite the Codex worktree (second confirmation). `--yes` skips prompts.
+- `apply` is non-destructive and will not switch direction automatically on conflict.
+- On conflict, `apply` exits with a next-step hint for `overwrite --to ...`.
+- `overwrite` resets/cleans the destination before transfer and is destructive by design.
+- `--dry-run` prints `plan`, `preflight`, and `actions` sections, then echoes the underlying git/copy operations.
 
 ### Cleanup
 
@@ -452,23 +476,23 @@ The `--output` (`-o`) and `--field` (`-f`) flags enable powerful shell integrati
 
 ### Output Formats
 
-| Format | Description | Available In |
-|--------|-------------|--------------|
+| Format  | Description                    | Available In     |
+| ------- | ------------------------------ | ---------------- |
 | `table` | Human-readable table (default) | `list`, `status` |
-| `json` | JSON array | `list`, `status` |
-| `csv` | CSV with headers | `list`, `status` |
-| `raw` | Single value, no decoration | `create`, `list` |
-| `text` | Styled text output (default) | `create` |
+| `json`  | JSON array                     | `list`, `status` |
+| `csv`   | CSV with headers               | `list`, `status` |
+| `raw`   | Single value, no decoration    | `create`, `list` |
+| `text`  | Styled text output (default)   | `create`         |
 
 ### Field Selection (for `--output raw`)
 
 When using `--output raw` with `list`, specify which field to output:
 
-| Field | Description |
-|-------|-------------|
-| `path` | Worktree path (default) |
-| `task` | Task name |
-| `branch` | Branch name |
+| Field    | Description             |
+| -------- | ----------------------- |
+| `path`   | Worktree path (default) |
+| `task`   | Task name               |
+| `branch` | Branch name             |
 
 ### Piping Examples
 
@@ -547,6 +571,7 @@ gwtt-new() {
 ### Raw Output Fallback
 
 When using `--output raw` with `list`:
+
 - If no matching worktree exists but the branch does, returns the main worktree path
 - Requires either a task filter or `--branch` flag
 
@@ -617,6 +642,7 @@ export PATH="$(go env GOPATH)/bin:$PATH"
 ### Shell Alias Not Working
 
 Reload your shell after adding the alias:
+
 ```bash
 source ~/.bashrc   # Bash
 source ~/.zshrc    # Zsh
@@ -637,4 +663,4 @@ This project is licensed under the MIT License — see the [LICENSE](https://git
 - Task names are slugified (lowercase, hyphens replace spaces)
 - Paths are relative by default; use `--abs` for absolute
 - Use `--dry-run` to preview git commands
-- Global flags: `--mode`, `--theme`, `--nocolor`, `--themes`
+- Global flags: `--mode` (`-m`), `--theme`, `--nocolor`, `--themes`

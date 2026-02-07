@@ -245,7 +245,7 @@ func TestIntegrationCodexListStatusFiltering(t *testing.T) {
 	}
 }
 
-func TestIntegrationApplyConflictConfirmation(t *testing.T) {
+func TestIntegrationApplyConflictRequiresExplicitOverwrite(t *testing.T) {
 	repoDir := initRepo(t, true)
 	codexHome := setCodexHome(t)
 	opaqueID := "apply01"
@@ -254,26 +254,145 @@ func TestIntegrationApplyConflictConfirmation(t *testing.T) {
 	writeFile(t, repoDir, "shared.txt", "local change\n")
 	writeFile(t, codexPath, "shared.txt", "codex change\n")
 
-	_, err := runCLIError(t, repoDir, "no\n", "--nocolor", "--mode", "codex", "apply", opaqueID)
-	if err == nil || !strings.Contains(err.Error(), "canceled") {
-		t.Fatalf("expected apply to be canceled, got %v", err)
+	output, err := runCLIError(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID)
+	if err == nil || !strings.Contains(err.Error(), "apply aborted due to conflicts") {
+		t.Fatalf("expected apply conflict abort, got %v", err)
+	}
+	if !strings.Contains(output, "next step: gwtt overwrite --to local "+opaqueID) {
+		t.Fatalf("expected overwrite next-step guidance, got output:\n%s", output)
 	}
 
-	content, err := os.ReadFile(filepath.Join(codexPath, "shared.txt"))
+	content, err := os.ReadFile(filepath.Join(repoDir, "shared.txt"))
+	if err != nil {
+		t.Fatalf("read local file: %v", err)
+	}
+	if string(content) != "local change\n" {
+		t.Fatalf("expected local content to remain, got %q", string(content))
+	}
+
+	content, err = os.ReadFile(filepath.Join(codexPath, "shared.txt"))
 	if err != nil {
 		t.Fatalf("read codex file: %v", err)
 	}
 	if string(content) != "codex change\n" {
 		t.Fatalf("expected codex content to remain, got %q", string(content))
 	}
+}
 
-	runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID, "--yes")
-	content, err = os.ReadFile(filepath.Join(codexPath, "shared.txt"))
+func TestIntegrationApplyDryRunPlanOutput(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "applydry1"
+	codexPath := addCodexWorktree(t, repoDir, codexHome, opaqueID)
+
+	writeFile(t, codexPath, "dry.txt", "codex dry-run\n")
+
+	output := runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID, "--dry-run")
+	for _, want := range []string{
+		"apply plan",
+		"  to: local",
+		"preflight",
+		"actions",
+		"tracked_patch:",
+		"untracked_files:",
+		"copy ",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
+		}
+	}
+}
+
+func TestIntegrationOverwriteDryRunPlanOutput(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "applydry2"
+	codexPath := addCodexWorktree(t, repoDir, codexHome, opaqueID)
+
+	writeFile(t, repoDir, "dry-overwrite.txt", "from local\n")
+	writeFile(t, codexPath, "dry-overwrite.txt", "from codex\n")
+
+	output := runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "overwrite", opaqueID, "--to", "worktree", "--dry-run")
+	for _, want := range []string{
+		"overwrite plan",
+		"  to: worktree",
+		"  overwrite: true",
+		"[destructive] git -C ",
+		"reset --hard",
+		"clean -fd",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
+		}
+	}
+}
+
+func TestIntegrationOverwriteToLocalConfirmation(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "apply02"
+	codexPath := addCodexWorktree(t, repoDir, codexHome, opaqueID)
+
+	writeFile(t, repoDir, "shared.txt", "local change\n")
+	writeFile(t, codexPath, "shared.txt", "codex change\n")
+
+	_, err := runCLIError(t, repoDir, "no\n", "--nocolor", "--mode", "codex", "overwrite", opaqueID)
+	if err == nil || !strings.Contains(err.Error(), "canceled") {
+		t.Fatalf("expected overwrite to be canceled, got %v", err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(repoDir, "shared.txt"))
 	if err != nil {
-		t.Fatalf("read codex file after apply: %v", err)
+		t.Fatalf("read local file after cancel: %v", err)
 	}
 	if string(content) != "local change\n" {
-		t.Fatalf("expected codex content to be overwritten, got %q", string(content))
+		t.Fatalf("expected local content unchanged after cancel, got %q", string(content))
+	}
+
+	runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "overwrite", opaqueID, "--to", "local", "--yes")
+	content, err = os.ReadFile(filepath.Join(repoDir, "shared.txt"))
+	if err != nil {
+		t.Fatalf("read local file after overwrite: %v", err)
+	}
+	if string(content) != "codex change\n" {
+		t.Fatalf("expected local content overwritten from codex, got %q", string(content))
+	}
+}
+
+func TestIntegrationApplyAndOverwriteToWorktree(t *testing.T) {
+	repoDir := initRepo(t, true)
+	codexHome := setCodexHome(t)
+	opaqueID := "apply03"
+	codexPath := addCodexWorktree(t, repoDir, codexHome, opaqueID)
+
+	writeFile(t, repoDir, "shared.txt", "from local\n")
+
+	runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID, "--to", "worktree")
+
+	content, err := os.ReadFile(filepath.Join(codexPath, "shared.txt"))
+	if err != nil {
+		t.Fatalf("read codex file after apply --to worktree: %v", err)
+	}
+	if string(content) != "from local\n" {
+		t.Fatalf("expected worktree content from local apply, got %q", string(content))
+	}
+
+	writeFile(t, repoDir, "shared.txt", "source overwrite\n")
+	writeFile(t, codexPath, "shared.txt", "dest dirty\n")
+
+	_, err = runCLIError(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID, "--to", "worktree")
+	if err == nil || !strings.Contains(err.Error(), "apply aborted due to conflicts") {
+		t.Fatalf("expected apply --to worktree conflict abort, got %v", err)
+	}
+
+	runCLI(t, repoDir, "", "--nocolor", "--mode", "codex", "apply", opaqueID, "--to", "worktree", "--force", "--yes")
+
+	content, err = os.ReadFile(filepath.Join(codexPath, "shared.txt"))
+	if err != nil {
+		t.Fatalf("read codex file after apply --force: %v", err)
+	}
+	if string(content) != "source overwrite\n" {
+		t.Fatalf("expected apply --force to overwrite worktree, got %q", string(content))
 	}
 }
 

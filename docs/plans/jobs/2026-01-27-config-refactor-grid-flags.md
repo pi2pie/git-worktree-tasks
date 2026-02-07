@@ -1,6 +1,6 @@
 ---
 title: "Config refactor and grid flags preservation"
-date: 2026-01-27
+created-date: 2026-01-27
 status: completed
 agent: github-copilot
 ---
@@ -36,6 +36,7 @@ for _, path := range paths {
 ```
 
 Benefits:
+
 - Eliminates code duplication
 - Easier to add more fallback paths in the future
 - Maintains "first match wins" semantics
@@ -65,6 +66,7 @@ Fixed grid cascade behavior to preserve explicit settings across config layers:
 ## Test Coverage
 
 Added `TestLoadConfigExplicitGridPreserved` to verify:
+
 - User config sets `list.grid = true`
 - Project config sets `table.grid = false` (no explicit `list.grid`)
 - Result: `list.grid` stays `true`, `status.grid` cascades to `false`

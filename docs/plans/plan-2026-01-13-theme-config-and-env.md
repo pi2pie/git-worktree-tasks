@@ -1,14 +1,16 @@
 ---
 title: "Theme config and env"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: codex
 ---
 
 ## Goal
+
 Add config/env-driven theme selection so users can set a default theme without always passing `--theme`.
 
 ## Scope
+
 - Define config sources, schema, and precedence for theme selection only.
 - Implement config discovery for:
   - User config: `$HOME/.config/gwtt/config.toml`
@@ -18,13 +20,16 @@ Add config/env-driven theme selection so users can set a default theme without a
 - Document the config options in `README.md`.
 
 ## Out of Scope
+
 - Custom theme palette definitions in config.
 - Other configuration options beyond theme selection.
 
 ## Related Research
+
 - ../research-2026-01-13-toml-config-options.md
 
 ## Design Decisions
+
 - **Precedence (highest → lowest)**: CLI flag `--theme` → `GWTT_THEME` → project config (`gwtt.config.toml`, then `gwtt.toml`) → user config → default theme.
 - **Config schema (TOML)**:
   - Prefer a focused `theme` table.
@@ -39,6 +44,7 @@ Add config/env-driven theme selection so users can set a default theme without a
   - If both project files exist, `gwtt.config.toml` wins.
 
 ## Milestones
+
 1. Add a small config package to parse TOML and resolve precedence.
 2. Wire config into CLI pre-run logic.
 3. Update docs and examples.

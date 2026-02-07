@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	envColorEnabled = "GWTT_COLOR"
-	envMode         = "GWTT_MODE"
+	envColorEnabled            = "GWTT_COLOR"
+	envMode                    = "GWTT_MODE"
+	envDryRunMaskSensitivePath = "GWTT_DRY_RUN_MASK_SENSITIVE_PATHS"
 )
 
 type Config struct {
@@ -19,6 +20,7 @@ type Config struct {
 	Theme   ThemeConfig
 	UI      UIConfig
 	Table   TableConfig
+	DryRun  DryRunConfig
 	Create  CreateConfig
 	List    ListConfig
 	Status  StatusConfig
@@ -36,6 +38,10 @@ type UIConfig struct {
 
 type TableConfig struct {
 	Grid bool
+}
+
+type DryRunConfig struct {
+	MaskSensitivePaths bool
 }
 
 type CreateConfig struct {
@@ -93,6 +99,9 @@ func DefaultConfig() Config {
 		Table: TableConfig{
 			Grid: false,
 		},
+		DryRun: DryRunConfig{
+			MaskSensitivePaths: true,
+		},
 		Create: CreateConfig{
 			Output:       "text",
 			SkipExisting: false,
@@ -137,6 +146,7 @@ type loadedConfigFile struct {
 	Theme   themeConfigFile   `toml:"theme"`
 	UI      uiConfigFile      `toml:"ui"`
 	Table   tableConfigFile   `toml:"table"`
+	DryRun  dryRunConfigFile  `toml:"dry_run"`
 	Create  createConfigFile  `toml:"create"`
 	List    listConfigFile    `toml:"list"`
 	Status  statusConfigFile  `toml:"status"`
@@ -154,6 +164,10 @@ type uiConfigFile struct {
 
 type tableConfigFile struct {
 	Grid *bool `toml:"grid"`
+}
+
+type dryRunConfigFile struct {
+	MaskSensitivePaths *bool `toml:"mask_sensitive_paths"`
 }
 
 type createConfigFile struct {
@@ -295,6 +309,11 @@ func applyEnvConfig(cfg *Config) error {
 	} else if ok {
 		cfg.UI.ColorEnabled = enabled
 	}
+	if enabled, ok, err := envBool(envDryRunMaskSensitivePath); err != nil {
+		return err
+	} else if ok {
+		cfg.DryRun.MaskSensitivePaths = enabled
+	}
 	return nil
 }
 
@@ -341,6 +360,9 @@ func applyConfig(cfg *Config, flags *gridFlags, file loadedConfigFile) {
 	}
 	if file.Table.Grid != nil {
 		cfg.Table.Grid = *file.Table.Grid
+	}
+	if file.DryRun.MaskSensitivePaths != nil {
+		cfg.DryRun.MaskSensitivePaths = *file.DryRun.MaskSensitivePaths
 	}
 	if output, ok := trimString(file.Create.Output); ok {
 		cfg.Create.Output = output

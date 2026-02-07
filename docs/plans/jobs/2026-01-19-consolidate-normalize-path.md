@@ -1,6 +1,6 @@
 ---
 title: "Consolidate duplicate path normalization"
-date: 2026-01-19
+created-date: 2026-01-19
 status: completed
 agent: Zed Agent
 ---

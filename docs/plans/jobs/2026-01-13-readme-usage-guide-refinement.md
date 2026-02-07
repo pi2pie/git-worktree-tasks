@@ -1,6 +1,6 @@
 ---
 title: "README Usage Guide Refinement"
-date: 2026-01-13
+created-date: 2026-01-13
 status: completed
 agent: GitHub Copilot
 ---
@@ -29,15 +29,16 @@ Restructured and refined the README to provide a clearer usage guide with improv
 
 Documented the `--output` (`-o`) and `--field` (`-f`) flag combinations:
 
-| Format | Description | Available In |
-|--------|-------------|--------------|
+| Format  | Description                    | Available In     |
+| ------- | ------------------------------ | ---------------- |
 | `table` | Human-readable table (default) | `list`, `status` |
-| `json` | JSON array | `list`, `status` |
-| `csv` | CSV with headers | `list`, `status` |
-| `raw` | Single value, no decoration | `create`, `list` |
-| `text` | Styled text output (default) | `create` |
+| `json`  | JSON array                     | `list`, `status` |
+| `csv`   | CSV with headers               | `list`, `status` |
+| `raw`   | Single value, no decoration    | `create`, `list` |
+| `text`  | Styled text output (default)   | `create`         |
 
 Added practical piping examples:
+
 - Navigate to worktree: `cd "$(gwtt list my-task -o raw)"`
 - Copy to clipboard: `gwtt list my-task -o raw -f task | pbcopy`
 - Open in editor: `code "$(gwtt list my-task -o raw)"`
