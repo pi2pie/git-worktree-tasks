@@ -2,13 +2,13 @@
 title: "Task inference for custom worktree paths"
 created-date: 2026-02-21
 modified-date: 2026-02-21
-status: in-progress
+status: completed
 agent: codex
 ---
 
 ## Goal
 
-Evaluate a safe, backward-compatible way to support task lookup when worktree paths do not follow the default `<repo>_<task>` naming convention (for example, `.claude/worktrees/<task>`), while preserving current `gwtt` shell workflows.
+Evaluate a safe, backward-compatible way to support task lookup when worktree paths do not follow the default `<repo>_<task>` naming convention (for example, `.worktrees/<task>`), while preserving current `gwtt` shell workflows.
 
 ## Milestone Goal
 
@@ -18,7 +18,7 @@ Define a concrete approach that can be implemented in a small patch for the next
 
 - Classic-mode task discovery is path-derived only: `list`/`status` call `TaskFromPath(repo, wt.Path)`, and custom path layouts therefore produce `task = "-"`. [^cli-list] [^cli-status] [^worktree-naming]
 - `list <task> -o raw` only resolves rows by task match in classic mode; when no row matches, it falls back to the main worktree path if the branch exists. This makes task lookups on custom paths return `"."` instead of the target worktree path. [^cli-list] [^cli-common] [^readme-fallback]
-- The behavior is reproducible with `create --path ./.claude/worktrees/new-task` and is tracked as issue `#23`. [^issue-23]
+- The behavior is reproducible with `create --path ./.worktrees/new-task` and is tracked as issue `#23`. [^issue-23]
 - Current docs already acknowledge that path templating can break `TaskFromPath` discovery unless `{task}` is preserved, so this is a known design boundary. [^plan-extensible]
 
 ## Option Analysis
@@ -33,7 +33,7 @@ Define a concrete approach that can be implemented in a small patch for the next
   - No output behavior changes.
 - Cons:
   - `list <task>` behaves inconsistently across path layouts.
-  - Shell flows like `cd "$(gwtt list <task> -o raw)"` are brittle for `.claude/worktrees/*`.
+  - Shell flows like `cd "$(gwtt list <task> -o raw)"` are brittle for `.worktrees/*`.
 
 ### Option B: Add branch-backed task inference fallback (recommended)
 
@@ -82,7 +82,7 @@ This addresses the problem with minimal scope and preserves existing workflows.
      - path-based main-worktree exclusion (`repoRoot`) so the primary checkout still renders as `-`.
 2. Use that helper in both `list` and `status` to keep behavior aligned.
 3. Add unit/integration tests for:
-   - custom path `.claude/worktrees/new-task` + branch `new-task`
+   - custom path `.worktrees/new-task` + branch `new-task`
    - `list new-task -o raw` returns custom worktree path
    - `status new-task` resolves custom worktree row
    - main worktree remains `task = "-"`.

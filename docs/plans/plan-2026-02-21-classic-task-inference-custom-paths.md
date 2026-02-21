@@ -2,13 +2,13 @@
 title: "Classic task inference for custom worktree paths"
 created-date: 2026-02-21
 modified-date: 2026-02-21
-status: active
+status: completed
 agent: codex
 ---
 
 ## Context
 
-Issue `#23` shows that `list <task> -o raw` can return the main worktree path when the target worktree uses a custom path layout (for example, `.claude/worktrees/<task>`) instead of the default `<repo>_<task>` naming convention.
+Issue `#23` shows that `list <task> -o raw` can return the main worktree path when the target worktree uses a custom path layout (for example, `.worktrees/<task>`) instead of the default `<repo>_<task>` naming convention.
 
 Current classic-mode behavior derives task names from path only. When derivation fails, task becomes `-`, task filtering misses the row, and raw mode falls back to the main worktree path.
 
@@ -68,10 +68,10 @@ Make `list` and `status` task lookup reliable for custom worktree paths in class
 
 ### Phase 5: Documentation
 
-- [ ] Update `README.md` to reflect classic-mode task inference fallback for custom worktree paths.
-- [ ] Update `README.md` examples for `list <task>` / `status <task>` to align with post-enhancement behavior.
-- [ ] Clarify in `README.md` that `--branch` remains explicit/authoritative filtering.
-- [ ] Review and revise `docs/schemas/config-gwtt.md` wording around `create.path.format` and task discovery constraints.
+- [x] Update `README.md` to reflect classic-mode task inference fallback for custom worktree paths.
+- [x] Update `README.md` examples for `list <task>` / `status <task>` to align with post-enhancement behavior.
+- [x] Clarify in `README.md` that `--branch` remains explicit/authoritative filtering.
+- [x] Review and revise `docs/schemas/config-gwtt.md` wording around `create.path.format` and task discovery constraints.
 - [x] Add/refresh a job record under `docs/plans/jobs/` when implementation starts.
 
 ## Acceptance Criteria

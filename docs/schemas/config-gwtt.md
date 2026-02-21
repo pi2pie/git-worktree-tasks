@@ -1,7 +1,7 @@
 ---
 title: "gwtt configuration schema"
 created-date: 2026-01-27
-modified-date: 2026-02-07
+modified-date: 2026-02-21
 status: in-progress
 agent: codex
 ---
@@ -66,7 +66,8 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 
 - `root` (string, default: `"../"`)
 - `format` (string, default: `"{repo}_{task}"`)
-  - Must include `{task}`.
+  - Recommended to include `{task}` for predictable path-derived task names.
+  - If omitted, task lookup can still fall back to branch-backed inference for non-main, non-detached worktrees.
   - `{repo}` is optional.
 
 ### `[list]`
@@ -113,7 +114,7 @@ Define the authoritative configuration schema for `gwtt`, including keys, types,
 
 ## Decisions
 
-- `create.path.format` must include `{task}` to preserve task discovery.
+- `create.path.format` should include `{task}` for predictable path-derived discovery; branch-backed fallback covers custom path layouts for eligible rows.
 - `merge_mode` is exclusive; only one strategy may be active at a time.
 - Codex-mode uses an `apply` command for hand-off changes; there are no config keys for it yet.
 - No config defaults for `create.base` or `status/finish.target`.
