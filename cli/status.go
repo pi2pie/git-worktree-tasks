@@ -165,7 +165,10 @@ func newStatusCommand() *cobra.Command {
 							continue
 						}
 					}
-					task, _ = worktree.TaskFromPath(repo, wt.Path)
+					task, err = deriveClassicTask(repoRoot, repo, wt)
+					if err != nil {
+						return err
+					}
 					if query != "" && !matchesTask(task, query, opts.strict) {
 						continue
 					}

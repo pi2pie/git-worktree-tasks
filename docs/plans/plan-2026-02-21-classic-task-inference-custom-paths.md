@@ -1,6 +1,7 @@
 ---
 title: "Classic task inference for custom worktree paths"
 created-date: 2026-02-21
+modified-date: 2026-02-21
 status: active
 agent: codex
 ---
@@ -42,28 +43,28 @@ Make `list` and `status` task lookup reliable for custom worktree paths in class
 
 ### Phase 1: Shared Task Derivation Helper
 
-- [ ] Add a helper in `cli` for classic-mode row task derivation.
-- [ ] Keep current path-based extraction as first priority.
-- [ ] Add branch-backed fallback for non-main, non-detached rows.
-- [ ] Normalize inferred branch task values consistently for matching.
+- [x] Add a helper in `cli` for classic-mode row task derivation.
+- [x] Keep current path-based extraction as first priority.
+- [x] Add branch-backed fallback for non-main, non-detached rows.
+- [x] Normalize inferred branch task values consistently for matching.
 
 ### Phase 2: Command Integration
 
-- [ ] Replace direct `TaskFromPath(...)` usage in `cli/list.go` with the helper.
-- [ ] Replace direct `TaskFromPath(...)` usage in `cli/status.go` with the same helper.
-- [ ] Preserve current codex-mode behavior unchanged.
+- [x] Replace direct `TaskFromPath(...)` usage in `cli/list.go` with the helper.
+- [x] Replace direct `TaskFromPath(...)` usage in `cli/status.go` with the same helper.
+- [x] Preserve current codex-mode behavior unchanged.
 
 ### Phase 3: Verification Tests
 
-- [ ] Add/extend tests to cover custom-path worktree + branch inference.
-- [ ] Verify `list new-task -o raw` resolves to custom worktree path.
-- [ ] Verify `status new-task` resolves custom worktree row.
-- [ ] Verify main worktree row remains `task = "-"`.
-- [ ] Verify fuzzy/default and `--strict` semantics remain unchanged.
+- [x] Add/extend tests to cover custom-path worktree + branch inference.
+- [x] Verify `list new-task -o raw` resolves to custom worktree path.
+- [x] Verify `status new-task` resolves custom worktree row.
+- [x] Verify main worktree row remains `task = "-"`.
+- [x] Verify fuzzy/default and `--strict` semantics remain unchanged.
 
 ### Phase 4: Optional Follow-up Fix
 
-- [ ] Evaluate and, if approved, patch raw fallback to honor `--field` when no rows match and fallback branch is used.
+- [x] Evaluate and, if approved, patch raw fallback to honor `--field` when no rows match and fallback branch is used.
 
 ### Phase 5: Documentation
 
@@ -71,7 +72,7 @@ Make `list` and `status` task lookup reliable for custom worktree paths in class
 - [ ] Update `README.md` examples for `list <task>` / `status <task>` to align with post-enhancement behavior.
 - [ ] Clarify in `README.md` that `--branch` remains explicit/authoritative filtering.
 - [ ] Review and revise `docs/schemas/config-gwtt.md` wording around `create.path.format` and task discovery constraints.
-- [ ] Add/refresh a job record under `docs/plans/jobs/` when implementation starts.
+- [x] Add/refresh a job record under `docs/plans/jobs/` when implementation starts.
 
 ## Acceptance Criteria
 

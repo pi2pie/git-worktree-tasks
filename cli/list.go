@@ -146,7 +146,10 @@ func newListCommand() *cobra.Command {
 							continue
 						}
 					}
-					task, _ = worktree.TaskFromPath(repo, wt.Path)
+					task, err = deriveClassicTask(repoRoot, repo, wt)
+					if err != nil {
+						return err
+					}
 				}
 				if task == "" {
 					task = "-"
@@ -205,7 +208,13 @@ func newListCommand() *cobra.Command {
 					return err
 				}
 				if ok {
-					if _, err := fmt.Fprintln(cmd.OutOrStdout(), displayPath(repoRoot, path, opts.abs)); err != nil {
+					row := listRow{
+						Task:    "-",
+						Branch:  fallbackBranch,
+						Path:    displayPath(repoRoot, path, opts.abs),
+						Present: true,
+					}
+					if _, err := fmt.Fprintln(cmd.OutOrStdout(), listFieldValue(row, field)); err != nil {
 						return err
 					}
 					return nil

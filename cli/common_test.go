@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/pi2pie/git-worktree-tasks/internal/worktree"
 )
 
 type fakeRunner struct {
@@ -123,6 +125,68 @@ func TestFallbackPathForBranch(t *testing.T) {
 	}
 	if path != "/tmp/repo" {
 		t.Fatalf("fallbackPathForBranch() = %q, want %q", path, "/tmp/repo")
+	}
+}
+
+func TestDeriveClassicTask(t *testing.T) {
+	repoRoot := "/tmp/repo"
+	repo := "repo"
+	tests := []struct {
+		name string
+		wt   worktree.Worktree
+		want string
+	}{
+		{
+			name: "path naming convention wins",
+			wt: worktree.Worktree{
+				Path:   "/tmp/repo_task-from-path",
+				Branch: "refs/heads/other-branch",
+			},
+			want: "task-from-path",
+		},
+		{
+			name: "fallback to branch task for custom path",
+			wt: worktree.Worktree{
+				Path:   "/tmp/repo/.claude/worktrees/new-task",
+				Branch: "refs/heads/new-task",
+			},
+			want: "new-task",
+		},
+		{
+			name: "fallback branch task is slugified",
+			wt: worktree.Worktree{
+				Path:   "/tmp/repo/.claude/worktrees/release",
+				Branch: "refs/heads/release/1.0",
+			},
+			want: "release/1-0",
+		},
+		{
+			name: "main worktree path stays empty task",
+			wt: worktree.Worktree{
+				Path:   "/tmp/repo",
+				Branch: "refs/heads/main",
+			},
+			want: "",
+		},
+		{
+			name: "detached stays empty task",
+			wt: worktree.Worktree{
+				Path: "/tmp/repo/.claude/worktrees/detached",
+			},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := deriveClassicTask(repoRoot, repo, tt.wt)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("deriveClassicTask() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
