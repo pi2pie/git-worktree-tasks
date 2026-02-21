@@ -42,7 +42,7 @@ Reduce accidental disclosure of user-identifying local paths in `--dry-run` outp
   - `formatGitCommandForDryRun(args []string, mask bool) string`
 - Matching rules:
   - Exact home path maps to platform home token (`$HOME` or `%USERPROFILE%`).
-  - Descendants map to `<home-token>/<relative>` on POSIX and `<home-token>\<relative>` on Windows.
+  - Descendants map to `$HOME/<relative>` on POSIX and `%USERPROFILE%\<relative>` on Windows.
   - Prefix-safe matching only (separator-aware).
   - On Windows, matching is case-insensitive.
   - If home lookup fails, path is left unchanged.

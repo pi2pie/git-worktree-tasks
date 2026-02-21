@@ -20,4 +20,4 @@ Add multiple UI themes selectable via `--theme` and improve table rendering for 
 
 ## Related Research
 
-- ../research-2026-01-12-themes-and-table.md
+- docs/researches/research-2026-01-12-themes-and-table.md

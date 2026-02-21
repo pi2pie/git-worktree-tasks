@@ -201,9 +201,9 @@ README.md              ✅ Updated with dist/ references
 
 ## Related Documents
 
-- [Build and installation flow plan](../plan-2026-01-13-build-and-distribution-flow.md) — Parent plan
-- [Homebrew integration research](../research-2026-01-13-homebrew-integration.md) — Future distribution strategy
-- [Verify root command configuration](./2026-01-13-verify-root-command-config.md) — Initial investigation
+- `docs/plans/plan-2026-01-13-build-and-distribution-flow.md` — Parent plan
+- `docs/researches/research-2026-01-13-homebrew-integration.md` — Future distribution strategy
+- `docs/plans/jobs/2026-01-13-verify-root-command-config.md` — Initial investigation
 
 ## Notes
 

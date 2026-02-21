@@ -192,7 +192,7 @@ Output requirements:
 - Related mode plan: [^mode-plan]
 
 [^apply-code]: `cli/apply_command.go`, `cli/apply_resolve.go`, `cli/apply_conflicts.go`, `cli/apply_transfer.go`, `cli/apply_files.go`
-[^mode-research]: `docs/research-2026-02-04-mode-classic-vs-codex.md`
+[^mode-research]: `docs/researches/research-2026-02-04-mode-classic-vs-codex.md`
 [^mode-plan]: `docs/plans/plan-2026-02-04-mode-classic-and-codex.md`
 
 ## Related Plans

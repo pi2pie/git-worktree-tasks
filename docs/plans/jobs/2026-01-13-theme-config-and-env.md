@@ -16,7 +16,7 @@ agent: codex
 - `internal/config/theme.go` — resolve theme name from `GWTT_THEME`, project config, and user config.
 - `cli/root.go` — respect config/env when `--theme` is not explicitly set.
 - `README.md` — configuration section with precedence and examples.
-- `docs/research-2026-01-13-toml-config-options.md` — TOML library options and pros/cons.
+- `docs/researches/research-2026-01-13-toml-config-options.md` — TOML library options and pros/cons.
 - `internal/config/theme_test.go` — tests for precedence and parsing errors.
 
 ## Rationale

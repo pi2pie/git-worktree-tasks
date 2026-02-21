@@ -42,4 +42,4 @@ The initial fix had coverage only via integration tests in `config_test.go`. Dir
 
 ## Related Plans
 
-- [plan-2026-01-27-fix-project-config-root-resolution.md](../plan-2026-01-27-fix-project-config-root-resolution.md)
+- `docs/plans/plan-2026-01-27-fix-project-config-root-resolution.md`

@@ -32,7 +32,7 @@ agent: codex
 - `man/man1/gwtt.1`
 - `man/man1/git-worktree-tasks.1`
 - `docs/plans/plan-2026-02-07-codex-apply-two-way-directions.md`
-- `docs/research-2026-02-07-codex-apply-direction-and-source-checkout.md`
+- `docs/researches/research-2026-02-07-codex-apply-direction-and-source-checkout.md`
 
 ## Verification
 
@@ -45,4 +45,4 @@ agent: codex
 
 ## Related Research
 
-- `docs/research-2026-02-07-codex-apply-direction-and-source-checkout.md`
+- `docs/researches/research-2026-02-07-codex-apply-direction-and-source-checkout.md`

@@ -19,7 +19,7 @@ agent: codex
 
 ## Files Updated
 
-- `docs/research-2026-02-04-mode-classic-vs-codex.md`
+- `docs/researches/research-2026-02-04-mode-classic-vs-codex.md`
 - `docs/plans/plan-2026-02-04-mode-classic-and-codex.md`
 - `docs/schemas/config-gwtt.md`
 - `cli/apply.go`

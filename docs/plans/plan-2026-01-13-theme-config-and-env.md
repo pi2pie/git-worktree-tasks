@@ -26,7 +26,7 @@ Add config/env-driven theme selection so users can set a default theme without a
 
 ## Related Research
 
-- ../research-2026-01-13-toml-config-options.md
+- docs/researches/research-2026-01-13-toml-config-options.md
 
 ## Design Decisions
 

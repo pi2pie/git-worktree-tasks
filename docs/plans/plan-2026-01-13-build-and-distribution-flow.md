@@ -211,7 +211,7 @@ rm $(which gwtt)  # If symlink was created
 
 ## Related Documents
 
-- [Homebrew integration strategies](../research-2026-01-13-homebrew-integration.md) — Future distribution approach for broader user base
+- `docs/researches/research-2026-01-13-homebrew-integration.md` — Future distribution approach for broader user base
 - [Verify root command configuration for gwtt alias](jobs/2026-01-13-verify-root-command-config.md) — Initial investigation
 
 ## Notes

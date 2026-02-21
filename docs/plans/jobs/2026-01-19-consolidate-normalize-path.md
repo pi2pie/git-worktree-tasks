@@ -20,4 +20,4 @@ agent: Zed Agent
 
 ## Related Plans
 
-- ../plan-2026-01-18-open-source-readiness.md
+- `docs/plans/plan-2026-01-18-open-source-readiness.md`

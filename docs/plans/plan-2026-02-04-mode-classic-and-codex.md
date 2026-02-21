@@ -30,7 +30,7 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 
 ### Phase 1: Docs & Spec Design
 
-- [x] Update `docs/research-2026-02-04-mode-classic-vs-codex.md` to reflect final decisions as implementation progresses.
+- [x] Update `docs/researches/research-2026-02-04-mode-classic-vs-codex.md` to reflect final decisions as implementation progresses.
 - [x] Update `docs/schemas/config-gwtt.md` to include `mode` and env var `GWTT_MODE`.
 - [x] Write a short CLI spec section (either in the research doc or a new schema doc) covering:
   - [x] Codex-mode worktree selection: `<opaque-id>` resolution rules and error messages.
@@ -108,4 +108,4 @@ Add a new global `--mode` (`classic` default, `codex` optional) to support Codex
 
 ## Related Research
 
-- `docs/research-2026-02-04-mode-classic-vs-codex.md`
+- `docs/researches/research-2026-02-04-mode-classic-vs-codex.md`

@@ -18,7 +18,7 @@ Updated dry-run command formatting so masked POSIX home paths remain executable 
 
 ## Why
 
-Single-quoting `$HOME` in dry-run output prevented shell expansion, so copy-pasted commands failed. The new formatting preserves masking while keeping commands runnable.
+Single-quoting the home token in dry-run output prevented shell expansion, so copy-pasted commands failed. The new formatting preserves masking while keeping commands runnable.
 
 ## Validation
 
