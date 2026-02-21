@@ -29,7 +29,7 @@ agent: codex
 - `cli/apply_files.go`
 - `cli/apply.go` (removed)
 - `docs/plans/plan-2026-02-07-codex-apply-two-way-directions.md`
-- `docs/research-2026-02-07-codex-apply-direction-and-source-checkout.md`
+- `docs/researches/research-2026-02-07-codex-apply-direction-and-source-checkout.md`
 
 ## Verification
 
@@ -43,4 +43,4 @@ agent: codex
 
 ## Related Research
 
-- `docs/research-2026-02-07-codex-apply-direction-and-source-checkout.md`
+- `docs/researches/research-2026-02-07-codex-apply-direction-and-source-checkout.md`

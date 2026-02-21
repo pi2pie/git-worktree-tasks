@@ -23,4 +23,4 @@ Deliver multiple selectable themes and improve CLI/TUI table responsiveness for 
 
 ## Related Research
 
-- ../research-2026-01-12-themes-and-table.md
+- docs/researches/research-2026-01-12-themes-and-table.md

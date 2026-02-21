@@ -94,6 +94,149 @@ func TestIntegrationCreateListStatusFinish(t *testing.T) {
 	}
 }
 
+func TestIntegrationListStatusCustomPathTaskInference(t *testing.T) {
+	repoDir := initRepo(t, true)
+	customRelPath := filepath.Join(".claude", "worktrees", "new-task")
+
+	worktreePath := strings.TrimSpace(runCLI(t, repoDir, "", "--nocolor", "create", "new-task", "--path", customRelPath, "--output", "raw"))
+	if worktreePath != customRelPath {
+		t.Fatalf("expected custom worktree path %q, got %q", customRelPath, worktreePath)
+	}
+
+	rawPath := strings.TrimSpace(runCLI(t, repoDir, "", "--nocolor", "list", "new-task", "--output", "raw"))
+	if rawPath != customRelPath {
+		t.Fatalf("list raw path = %q, want %q", rawPath, customRelPath)
+	}
+
+	listOutput := runCLI(t, repoDir, "", "--nocolor", "list", "new-task", "--output", "json")
+	var listRows []listRow
+	if err := json.Unmarshal([]byte(listOutput), &listRows); err != nil {
+		t.Fatalf("parse list json: %v", err)
+	}
+	if len(listRows) != 1 {
+		t.Fatalf("expected 1 list row, got %d", len(listRows))
+	}
+	if listRows[0].Task != "new-task" {
+		t.Fatalf("expected inferred task new-task, got %q", listRows[0].Task)
+	}
+	if listRows[0].Branch != "new-task" {
+		t.Fatalf("expected branch new-task, got %q", listRows[0].Branch)
+	}
+	if listRows[0].Path != customRelPath {
+		t.Fatalf("expected path %q, got %q", customRelPath, listRows[0].Path)
+	}
+
+	statusOutput := runCLI(t, repoDir, "", "--nocolor", "status", "new-task", "--output", "json")
+	var statusRows []statusRow
+	if err := json.Unmarshal([]byte(statusOutput), &statusRows); err != nil {
+		t.Fatalf("parse status json: %v", err)
+	}
+	if len(statusRows) != 1 {
+		t.Fatalf("expected 1 status row, got %d", len(statusRows))
+	}
+	if statusRows[0].Task != "new-task" {
+		t.Fatalf("expected inferred task new-task, got %q", statusRows[0].Task)
+	}
+	if statusRows[0].Branch != "new-task" {
+		t.Fatalf("expected branch new-task, got %q", statusRows[0].Branch)
+	}
+	if statusRows[0].Path != customRelPath {
+		t.Fatalf("expected path %q, got %q", customRelPath, statusRows[0].Path)
+	}
+
+	strictMismatch := runCLI(t, repoDir, "", "--nocolor", "list", "new", "--strict", "--output", "json")
+	var strictRows []listRow
+	if err := json.Unmarshal([]byte(strictMismatch), &strictRows); err != nil {
+		t.Fatalf("parse strict list json: %v", err)
+	}
+	if len(strictRows) != 0 {
+		t.Fatalf("expected 0 strict rows for partial query, got %d", len(strictRows))
+	}
+
+	fuzzyOutput := runCLI(t, repoDir, "", "--nocolor", "list", "new", "--output", "json")
+	var fuzzyRows []listRow
+	if err := json.Unmarshal([]byte(fuzzyOutput), &fuzzyRows); err != nil {
+		t.Fatalf("parse fuzzy list json: %v", err)
+	}
+	if len(fuzzyRows) != 1 || fuzzyRows[0].Task != "new-task" {
+		t.Fatalf("expected fuzzy match for new-task, got %+v", fuzzyRows)
+	}
+
+	allListOutput := runCLI(t, repoDir, "", "--nocolor", "list", "--output", "json")
+	var allRows []listRow
+	if err := json.Unmarshal([]byte(allListOutput), &allRows); err != nil {
+		t.Fatalf("parse full list json: %v", err)
+	}
+	foundMain := false
+	for _, row := range allRows {
+		if row.Path == "." {
+			foundMain = true
+			if row.Task != "-" {
+				t.Fatalf("expected main worktree task '-', got %q", row.Task)
+			}
+		}
+	}
+	if !foundMain {
+		t.Fatalf("expected to find main worktree row")
+	}
+
+	linkedDir := filepath.Join(repoDir, customRelPath)
+
+	listFromLinkedOutput := runCLI(t, linkedDir, "", "--nocolor", "list", "--output", "json")
+	var linkedRows []listRow
+	if err := json.Unmarshal([]byte(listFromLinkedOutput), &linkedRows); err != nil {
+		t.Fatalf("parse linked list json: %v", err)
+	}
+	if len(linkedRows) != 2 {
+		t.Fatalf("expected 2 linked list rows, got %d", len(linkedRows))
+	}
+	tasksByBranch := make(map[string]string, len(linkedRows))
+	for _, row := range linkedRows {
+		tasksByBranch[row.Branch] = row.Task
+	}
+	if tasksByBranch["main"] != "-" {
+		t.Fatalf("expected main branch task '-', got %q", tasksByBranch["main"])
+	}
+	if tasksByBranch["new-task"] != "new-task" {
+		t.Fatalf("expected linked branch task 'new-task', got %q", tasksByBranch["new-task"])
+	}
+
+	statusFromLinkedOutput := runCLI(t, linkedDir, "", "--nocolor", "status", "new-task", "--output", "json")
+	var linkedStatusRows []statusRow
+	if err := json.Unmarshal([]byte(statusFromLinkedOutput), &linkedStatusRows); err != nil {
+		t.Fatalf("parse linked status json: %v", err)
+	}
+	if len(linkedStatusRows) != 1 {
+		t.Fatalf("expected 1 linked status row for new-task, got %d", len(linkedStatusRows))
+	}
+	if linkedStatusRows[0].Task != "new-task" {
+		t.Fatalf("expected linked status task new-task, got %q", linkedStatusRows[0].Task)
+	}
+	if linkedStatusRows[0].Branch != "new-task" {
+		t.Fatalf("expected linked status branch new-task, got %q", linkedStatusRows[0].Branch)
+	}
+}
+
+func TestIntegrationListRawFallbackHonorsField(t *testing.T) {
+	repoDir := initRepo(t, true)
+	runGit(t, repoDir, "branch", "feature")
+
+	pathRaw := strings.TrimSpace(runCLI(t, repoDir, "", "--nocolor", "list", "feature", "--output", "raw"))
+	if pathRaw != "." {
+		t.Fatalf("expected fallback path '.', got %q", pathRaw)
+	}
+
+	branchRaw := strings.TrimSpace(runCLI(t, repoDir, "", "--nocolor", "list", "feature", "--output", "raw", "--field", "branch"))
+	if branchRaw != "feature" {
+		t.Fatalf("expected fallback branch 'feature', got %q", branchRaw)
+	}
+
+	taskRaw := strings.TrimSpace(runCLI(t, repoDir, "", "--nocolor", "list", "feature", "--output", "raw", "--field", "task"))
+	if taskRaw != "-" {
+		t.Fatalf("expected fallback task '-', got %q", taskRaw)
+	}
+}
+
 func TestIntegrationStatusNoCommits(t *testing.T) {
 	repoDir := initRepo(t, false)
 	statusOutput := runCLI(t, repoDir, "", "--nocolor", "status", "--output", "json")

@@ -73,4 +73,4 @@ Ship an extensible config system beyond theme, prioritizing low-risk defaults an
 
 ## Related Research
 
-- `docs/research-2026-01-27-extensible-config.md`
+- `docs/researches/research-2026-01-27-extensible-config.md`

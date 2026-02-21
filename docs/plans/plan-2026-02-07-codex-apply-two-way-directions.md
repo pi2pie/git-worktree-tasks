@@ -91,4 +91,4 @@ Implement a two-way `apply`/`overwrite` command model in codex mode with explici
 
 ## Related Research
 
-- `docs/research-2026-02-07-codex-apply-direction-and-source-checkout.md`
+- `docs/researches/research-2026-02-07-codex-apply-direction-and-source-checkout.md`

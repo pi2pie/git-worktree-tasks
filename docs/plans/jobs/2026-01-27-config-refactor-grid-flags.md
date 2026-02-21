@@ -73,5 +73,5 @@ Added `TestLoadConfigExplicitGridPreserved` to verify:
 
 ## Files Modified
 
-- [internal/config/config.go](../../../internal/config/config.go)
-- [internal/config/config_test.go](../../../internal/config/config_test.go)
+- `internal/config/config.go`
+- `internal/config/config_test.go`

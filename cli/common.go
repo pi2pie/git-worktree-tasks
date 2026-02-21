@@ -114,6 +114,34 @@ func fallbackPathForBranch(ctx context.Context, runner git.Runner, repoRoot, bra
 	return path, true, nil
 }
 
+func deriveClassicTask(repoRoot, mainWorktree, repo string, wt worktree.Worktree) (string, error) {
+	if task, ok := worktree.TaskFromPath(repo, wt.Path); ok && task != "" {
+		return task, nil
+	}
+
+	branch := strings.TrimSpace(strings.TrimPrefix(wt.Branch, "refs/heads/"))
+	if branch == "" {
+		return "", nil
+	}
+
+	if strings.TrimSpace(mainWorktree) == "" {
+		mainWorktree = repoRoot
+	}
+	mainWorktreeAbs, err := worktree.NormalizePath(repoRoot, mainWorktree)
+	if err != nil {
+		return "", err
+	}
+	wtAbs, err := worktree.NormalizePath(repoRoot, wt.Path)
+	if err != nil {
+		return "", err
+	}
+	if wtAbs == mainWorktreeAbs {
+		return "", nil
+	}
+
+	return worktree.SlugifyTask(branch), nil
+}
+
 func normalizeTaskQuery(raw string) (string, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {

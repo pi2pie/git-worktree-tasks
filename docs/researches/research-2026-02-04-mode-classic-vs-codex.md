@@ -49,7 +49,7 @@ To keep `classic` stable and keep `codex` aligned with Codex App:
   - Do not introduce new state files like `registry.json`/TOML for codex mode.
   - For `list`/`status`, inspect `$CODEX_HOME/worktrees/**` (and/or `git worktree list --porcelain` scoped to the local checkout) to discover worktrees and compute status.
   - In codex mode, `<task>` is the **opaque ID directory** directly under `$CODEX_HOME/worktrees`.
-    - Example path: `~/.codex/worktrees/bf15/git-worktree-tasks`
+    - Example path: `$CODEX_HOME/worktrees/bf15/git-worktree-tasks`
     - `<task>` is `bf15` (the opaque ID), **not** `git-worktree-tasks`.
 - **Create is detached-only:** in `codex` mode, `create` should not offer a `--branch` escape hatch; the default stays detached to avoid future complexity.
 - **Finish is classic-only:** in `codex` mode, `finish` is not a good fit; use a dedicated `apply` command instead.

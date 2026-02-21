@@ -70,12 +70,13 @@ Use research docs for exploratory work that is not yet ready for a plan but may 
 Location:
 
 ```text
-docs/research-YYYY-MM-DD-<short-title>.md
+docs/researches/research-YYYY-MM-DD-<short-title>.md
 ```
 
 Notes:
 
 - Use the creation date and a short, kebab-case title.
+- Keep all research docs inside `docs/researches/` (not directly under `docs/`).
 - Keep scope focused on a single topic or question.
 - If research becomes actionable, create a plan doc and link to it.
 
@@ -94,10 +95,14 @@ agent: <agent name>
 Suggested sections:
 
 - Goal
+- Milestone Goal (optional but recommended)
 - Key Findings
 - Implications or Recommendations
 - Open Questions (optional)
 - References (use footnote-style links)
+
+Optional metadata:
+- `milestone: v0.1.0` (or another release milestone) for feature-track research.
 
 Traceability:
 
@@ -129,6 +134,17 @@ status: draft | in-progress | completed | blocked
 agent: <agent name>
 ---
 ```
+
+---
+
+### Path Reference Policy (Default + Exceptions)
+
+- Use repository-relative paths for repository files in documentation (for example: `.github/workflows/release.yml`, `docs/plans/jobs/...`, `src/...`).
+- Do not include real machine-specific absolute paths that may reveal local user/home details from the current environment.
+- When useful for explanation, sanitized OS-specific absolute-path examples are allowed (for example: `/Users/alice/...`, `/home/alice/...`, `C:\Users\Alice\...`, `$HOME/.config/...`, `%USERPROFILE%\...`).
+- Prefer placeholder usernames like `alice` or `bob` in examples.
+- Keep this case-by-case: prefer clarity for behavior/docs examples, but avoid disclosing actual local paths.
+- This policy applies to plan, research, and job documents, including summaries, change lists, and verification notes.
 
 ---
 

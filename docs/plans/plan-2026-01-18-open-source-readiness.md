@@ -39,4 +39,4 @@ Prepare the project for an open-source release by addressing correctness gaps, U
 
 ## Related Research
 
-- docs/research-2026-01-19-create-default-base.md
+- docs/researches/research-2026-01-19-create-default-base.md

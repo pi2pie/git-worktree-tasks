@@ -24,7 +24,7 @@ Default list/status output to relative paths with a flag to show absolute paths,
 
 ## Related Research
 
-- docs/research-2026-01-12-worktree-ops-matrix.md
+- docs/researches/research-2026-01-12-worktree-ops-matrix.md
 
 ## Plan
 

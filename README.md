@@ -324,6 +324,10 @@ gwtt list "my-task" --strict
 # Filter by branch
 gwtt list --branch feature-branch
 
+# Custom path layout still searchable by task name
+gwtt create new-task -p ./.worktrees/new-task
+gwtt list new-task -o raw
+
 # Show absolute paths
 gwtt list --abs
 
@@ -343,6 +347,15 @@ gwtt --mode codex list
 | `--absolute-path` | `--abs` | Show absolute paths |
 | `--strict` | | Require exact task match |
 | `--grid` | | Render table with grid borders |
+
+**Task lookup behavior (classic mode):**
+
+- `list <task>` first resolves task names from `<repo>_<task>` paths.
+- If the path does not match that convention, task lookup falls back to branch-backed inference for non-main, non-detached worktrees.
+- `--branch` remains the explicit/authoritative branch filter.
+
+> [!NOTE]
+> If you place worktrees under a nested path inside the main repo (for example, `./.worktrees/<task>`), add that root path (for example, `.worktrees/`) to `.gitignore` in the main checkout.
 
 ### Checking Status
 
@@ -375,6 +388,11 @@ gwtt --mode codex status
 | `--absolute-path` | `--abs` | Show absolute paths |
 | `--strict` | | Require exact task match |
 | `--grid` | | Render table with grid borders |
+
+**Task lookup behavior (classic mode):**
+
+- `status <task>` uses the same task resolution as `list <task>` (path-first, then branch-backed fallback for eligible rows).
+- `--branch` remains the explicit/authoritative branch filter.
 
 ### Finishing Tasks
 
@@ -572,12 +590,21 @@ gwtt-new() {
 
 When using `--output raw` with `list`:
 
-- If no matching worktree exists but the branch does, returns the main worktree path
-- Requires either a task filter or `--branch` flag
+- If a matching worktree row exists (including custom path layouts), raw output uses that row.
+- If no matching worktree exists but the branch does, raw output falls back to a synthetic main-worktree row.
+- Fallback row output respects `--field`:
+  - `path` -> main worktree path
+  - `branch` -> fallback branch name
+  - `task` -> `-`
+- Requires either a task filter or `--branch` flag.
+- `--branch` remains the explicit/authoritative branch selector.
 
 ```bash
 # Returns path even if no worktree exists (fallback to main repo)
 gwtt list feature-branch -o raw
+
+# Field-aware fallback output
+gwtt list feature-branch -o raw -f branch
 ```
 
 ---

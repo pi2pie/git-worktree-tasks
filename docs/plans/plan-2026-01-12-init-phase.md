@@ -61,4 +61,4 @@ Establish the initial CLI structure, UX patterns, and repository scaffolding for
 
 ## Related Research
 
-- docs/research-2026-01-12-worktree-ops-matrix.md
+- docs/researches/research-2026-01-12-worktree-ops-matrix.md
