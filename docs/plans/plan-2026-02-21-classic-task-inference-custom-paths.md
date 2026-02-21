@@ -67,7 +67,10 @@ Make `list` and `status` task lookup reliable for custom worktree paths in class
 
 ### Phase 5: Documentation
 
-- [ ] Update user-facing docs if behavior examples need clarification.
+- [ ] Update `README.md` to reflect classic-mode task inference fallback for custom worktree paths.
+- [ ] Update `README.md` examples for `list <task>` / `status <task>` to align with post-enhancement behavior.
+- [ ] Clarify in `README.md` that `--branch` remains explicit/authoritative filtering.
+- [ ] Review and revise `docs/schemas/config-gwtt.md` wording around `create.path.format` and task discovery constraints.
 - [ ] Add/refresh a job record under `docs/plans/jobs/` when implementation starts.
 
 ## Acceptance Criteria
