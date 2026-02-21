@@ -179,6 +179,42 @@ func TestIntegrationListStatusCustomPathTaskInference(t *testing.T) {
 	if !foundMain {
 		t.Fatalf("expected to find main worktree row")
 	}
+
+	linkedDir := filepath.Join(repoDir, customRelPath)
+
+	listFromLinkedOutput := runCLI(t, linkedDir, "", "--nocolor", "list", "--output", "json")
+	var linkedRows []listRow
+	if err := json.Unmarshal([]byte(listFromLinkedOutput), &linkedRows); err != nil {
+		t.Fatalf("parse linked list json: %v", err)
+	}
+	if len(linkedRows) != 2 {
+		t.Fatalf("expected 2 linked list rows, got %d", len(linkedRows))
+	}
+	tasksByBranch := make(map[string]string, len(linkedRows))
+	for _, row := range linkedRows {
+		tasksByBranch[row.Branch] = row.Task
+	}
+	if tasksByBranch["main"] != "-" {
+		t.Fatalf("expected main branch task '-', got %q", tasksByBranch["main"])
+	}
+	if tasksByBranch["new-task"] != "new-task" {
+		t.Fatalf("expected linked branch task 'new-task', got %q", tasksByBranch["new-task"])
+	}
+
+	statusFromLinkedOutput := runCLI(t, linkedDir, "", "--nocolor", "status", "new-task", "--output", "json")
+	var linkedStatusRows []statusRow
+	if err := json.Unmarshal([]byte(statusFromLinkedOutput), &linkedStatusRows); err != nil {
+		t.Fatalf("parse linked status json: %v", err)
+	}
+	if len(linkedStatusRows) != 1 {
+		t.Fatalf("expected 1 linked status row for new-task, got %d", len(linkedStatusRows))
+	}
+	if linkedStatusRows[0].Task != "new-task" {
+		t.Fatalf("expected linked status task new-task, got %q", linkedStatusRows[0].Task)
+	}
+	if linkedStatusRows[0].Branch != "new-task" {
+		t.Fatalf("expected linked status branch new-task, got %q", linkedStatusRows[0].Branch)
+	}
 }
 
 func TestIntegrationListRawFallbackHonorsField(t *testing.T) {

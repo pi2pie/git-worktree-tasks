@@ -78,6 +78,13 @@ func newStatusCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			mainWorktree := ""
+			if mode != modeCodex {
+				mainWorktree, err = mainWorktreePath(ctx, runner, repoRoot)
+				if err != nil {
+					return err
+				}
+			}
 			if len(args) == 1 && opts.task != "" {
 				return fmt.Errorf("use either --task or [task], not both")
 			}
@@ -165,7 +172,7 @@ func newStatusCommand() *cobra.Command {
 							continue
 						}
 					}
-					task, err = deriveClassicTask(repoRoot, repo, wt)
+					task, err = deriveClassicTask(repoRoot, mainWorktree, repo, wt)
 					if err != nil {
 						return err
 					}

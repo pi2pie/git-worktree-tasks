@@ -81,6 +81,13 @@ func newListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			mainWorktree := ""
+			if mode != modeCodex {
+				mainWorktree, err = mainWorktreePath(ctx, runner, repoRoot)
+				if err != nil {
+					return err
+				}
+			}
 			if _, err := git.CurrentBranch(ctx, runner); err != nil {
 				return err
 			}
@@ -146,7 +153,7 @@ func newListCommand() *cobra.Command {
 							continue
 						}
 					}
-					task, err = deriveClassicTask(repoRoot, repo, wt)
+					task, err = deriveClassicTask(repoRoot, mainWorktree, repo, wt)
 					if err != nil {
 						return err
 					}

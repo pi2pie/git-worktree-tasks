@@ -114,7 +114,7 @@ func fallbackPathForBranch(ctx context.Context, runner git.Runner, repoRoot, bra
 	return path, true, nil
 }
 
-func deriveClassicTask(repoRoot, repo string, wt worktree.Worktree) (string, error) {
+func deriveClassicTask(repoRoot, mainWorktree, repo string, wt worktree.Worktree) (string, error) {
 	if task, ok := worktree.TaskFromPath(repo, wt.Path); ok && task != "" {
 		return task, nil
 	}
@@ -124,7 +124,10 @@ func deriveClassicTask(repoRoot, repo string, wt worktree.Worktree) (string, err
 		return "", nil
 	}
 
-	repoAbs, err := worktree.NormalizePath(repoRoot, repoRoot)
+	if strings.TrimSpace(mainWorktree) == "" {
+		mainWorktree = repoRoot
+	}
+	mainWorktreeAbs, err := worktree.NormalizePath(repoRoot, mainWorktree)
 	if err != nil {
 		return "", err
 	}
@@ -132,7 +135,7 @@ func deriveClassicTask(repoRoot, repo string, wt worktree.Worktree) (string, err
 	if err != nil {
 		return "", err
 	}
-	if wtAbs == repoAbs {
+	if wtAbs == mainWorktreeAbs {
 		return "", nil
 	}
 

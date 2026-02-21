@@ -129,12 +129,15 @@ func TestFallbackPathForBranch(t *testing.T) {
 }
 
 func TestDeriveClassicTask(t *testing.T) {
-	repoRoot := "/tmp/repo"
+	defaultRepoRoot := "/tmp/repo"
+	defaultMainWorktree := "/tmp/repo"
 	repo := "repo"
 	tests := []struct {
-		name string
-		wt   worktree.Worktree
-		want string
+		name         string
+		repoRoot     string
+		mainWorktree string
+		wt           worktree.Worktree
+		want         string
 	}{
 		{
 			name: "path naming convention wins",
@@ -169,6 +172,26 @@ func TestDeriveClassicTask(t *testing.T) {
 			want: "",
 		},
 		{
+			name:         "main worktree stays empty when invoked from linked worktree",
+			repoRoot:     "/tmp/repo/.claude/worktrees/new-task",
+			mainWorktree: "/tmp/repo",
+			wt: worktree.Worktree{
+				Path:   "/tmp/repo",
+				Branch: "refs/heads/main",
+			},
+			want: "",
+		},
+		{
+			name:         "linked worktree still infers task when invoked from linked worktree",
+			repoRoot:     "/tmp/repo/.claude/worktrees/new-task",
+			mainWorktree: "/tmp/repo",
+			wt: worktree.Worktree{
+				Path:   "/tmp/repo/.claude/worktrees/new-task",
+				Branch: "refs/heads/new-task",
+			},
+			want: "new-task",
+		},
+		{
 			name: "detached stays empty task",
 			wt: worktree.Worktree{
 				Path: "/tmp/repo/.claude/worktrees/detached",
@@ -179,7 +202,15 @@ func TestDeriveClassicTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := deriveClassicTask(repoRoot, repo, tt.wt)
+			repoRoot := tt.repoRoot
+			if repoRoot == "" {
+				repoRoot = defaultRepoRoot
+			}
+			mainWorktree := tt.mainWorktree
+			if mainWorktree == "" {
+				mainWorktree = defaultMainWorktree
+			}
+			got, err := deriveClassicTask(repoRoot, mainWorktree, repo, tt.wt)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
